@@ -20,9 +20,13 @@ void setup()
 	tasks[0] = new LedBlinkTask();
 	tasks[0]->init(50, 12);
 	tasks[1] = new LedBlinkTask();
-	tasks[1]->init(50, 13);
+	tasks[1]->init(100, 13);
 	tasks[2] = new LedBlinkTask();
-	tasks[2]->init(50, 11);
+	tasks[2]->init(250, 10);
+
+	tasks[3] = NULL;
+	tasks[4] = NULL;
+	tasks[5] = NULL;
 	/*tasks[3] = new LedBlinkTask();
 	tasks[3]->init(50, 8);*/
 
@@ -60,6 +64,9 @@ void updateKeys()
 
 void interpretInteraction(char command, KeyState state)
 {
+	if (tasks[command] == NULL) {
+		return;
+	}
 	Serial.println((byte)command);
 
 	switch (state)

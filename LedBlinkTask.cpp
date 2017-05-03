@@ -21,6 +21,12 @@ void LedBlinkTask::start()
 	Task::start();
 }
 
+void LedBlinkTask::start(uint16_t numberOfPerformings)
+{
+	toggle = true;
+	Task::start(2 * numberOfPerformings);
+}
+
 void LedBlinkTask::stop()
 {
 	digitalWrite(ledPin, false);
@@ -31,7 +37,6 @@ void LedBlinkTask::update()
 {
 	if (isExecutionTime()) {
 		digitalWrite(ledPin, toggle);
-		Serial.println(ledPin);
 		toggle = !toggle;
 		onAfterExecution();
 	}

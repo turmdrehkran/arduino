@@ -22,9 +22,9 @@ public:
 
 	virtual void init(uint16_t delay, uint16_t pin);
 	virtual void start();
+	virtual void start(uint16_t numberOfPerformings);
 	virtual void stop();
 	virtual void update();
-
 };
 
 

@@ -27,8 +27,6 @@ void setup()
 	tasks[3] = NULL;
 	tasks[4] = NULL;
 	tasks[5] = NULL;
-	/*tasks[3] = new LedBlinkTask();
-	tasks[3]->init(50, 8);*/
 
 	Serial.begin(9600);
 }
@@ -37,6 +35,30 @@ void loop()
 {
 	updateTasks();
 	updateKeys();
+
+	if (keypad.getState() == IDLE && Serial.available()) 
+	{
+		// readStringUntil('\n');
+		String command = Serial.readStringUntil('\n');
+		Serial.println(command);
+
+		// MOVE [MotorIndex] [NumberOfPerformings], z.B. MOVE 00 100, MOVE 01 2000, MOVE 03 2
+		if (command.startsWith("MOVE")) 
+		{
+			// index von 0 bis 9 möglich...
+			int motorIndex = command.substring(5, 7).toInt();
+			int numberOfPerformings = command.substring(8).toInt();
+			Serial.println(motorIndex);
+			Serial.println(numberOfPerformings);
+
+			if (motorIndex < 3)
+				tasks[motorIndex]->start(numberOfPerformings);
+		}
+		else if (command == "STOP")
+		{
+			tasks[0]->stop();
+		}
+	}
 }
 
 void updateTasks()
@@ -56,6 +78,13 @@ void updateKeys()
 		{
 			if (keypad.key[i].stateChanged)
 			{
+				/*
+					Das Keypad bindet die Keys an ein Character.
+					Da der Character \0 als NO_KEY definiert ist, 
+					beginnt die Nummerierung der Tasten bei 1.
+					Da die Task-Liste null basierenden ist, wird bei vor der Interpretation
+					der übergebene Index um 1 dekrementiert.
+				*/
 				interpretInteraction(keypad.key[i].kchar - 1, keypad.key[i].kstate);
 			}
 		}
@@ -67,7 +96,6 @@ void interpretInteraction(char command, KeyState state)
 	if (tasks[command] == NULL) {
 		return;
 	}
-	Serial.println((byte)command);
 
 	switch (state)
 	{
@@ -78,10 +106,10 @@ void interpretInteraction(char command, KeyState state)
 	case HOLD:
 		break;
 	case RELEASED:
-		tasks[command]->stop();
-		unlockTask(command);
 		break;
 	case IDLE:
+		tasks[command]->stop();
+		unlockTask(command);
 		break;
 	default:
 		break;

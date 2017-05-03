@@ -20,11 +20,15 @@ protected:
 	bool isExecutionTime();
 	void onAfterExecution();
 
+	uint16_t numberOfPerformings;
+	const uint16_t maxNumberOfPerformings = 511;
+
 public:
 	Task();
 
 	virtual void init(uint16_t delay, uint16_t pin);
 	virtual void start();
+	virtual void start(uint16_t numberOfPerformings);
 	virtual void stop();
 	virtual void update() = 0;
 

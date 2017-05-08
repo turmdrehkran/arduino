@@ -6,8 +6,7 @@
 
 void CommandTransceiverClass::receive()
 {
-	Serial.println("receive...");
-
+	Serial.println(F("receive..."));
 	commands = Serial.readString();
 }
 
@@ -34,7 +33,7 @@ bool CommandTransceiverClass::setTasks(Task** tasks, byte length)
 		Serial.println(str);
 		String command = String(str);
 		// MOVE [MotorIndex] [NumberOfPerformings], z.B. MOVE 00 100, MOVE 01 2000, MOVE 03 2
-		if (command.startsWith("MOVE"))
+		if (command.startsWith(F("MOVE")))
 		{
 			// index von 0 bis 9 möglich...
 			int motorIndex = command.substring(5, 7).toInt();
@@ -45,7 +44,7 @@ bool CommandTransceiverClass::setTasks(Task** tasks, byte length)
 			if (motorIndex < 3)
 				tasks[motorIndex]->start(numberOfPerformings);
 		}
-		else if (command == "STOP")
+		else if (command == F("STOP"))
 		{
 			for (int j = 0; j < length; ++j)
 			{

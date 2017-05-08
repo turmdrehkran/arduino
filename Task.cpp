@@ -58,5 +58,6 @@ void Task::onAfterExecution()
 	{
 		stop();
 	}
+	// TODO Callback-Method aufrufen
 }
 

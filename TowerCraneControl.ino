@@ -2,7 +2,6 @@
 #include <Keypad.h>
 #include "LedBlinkTask.h"
 #include "Task.h"
-#include "CommandTransceiver.h"
 
 byte keys[2][3]{
 	{ 1, 3, 5 },
@@ -16,6 +15,8 @@ Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, 2, 3);
 
 const byte MAX_TASKS = 6;
 Task* tasks[MAX_TASKS];
+
+bool isTaskSet;
 
 void setup()
 {
@@ -33,6 +34,8 @@ void setup()
 	tasks[5] = NULL;
 
 	Serial.begin(9600);
+
+	isTaskSet = false;
 }
 
 void loop()
@@ -42,13 +45,22 @@ void loop()
 
 	if (keypad.getState() == IDLE && CommandTransceiver.isAvailable()) 
 	{
-		Serial.print(".");
-		for (byte i = 0; i < MAX_TASKS; ++i) 
-		{
-			if (tasks[i] != NULL)
-				tasks[i]->stop();
-		}
-		CommandTransceiver.setTasks(tasks, MAX_TASKS);
+		stopTasks();
+		isTaskSet = CommandTransceiver.setTasks(tasks, MAX_TASKS);
+	}
+	else if (keypad.getState() != IDLE && isTaskSet)
+	{
+		isTaskSet = false;
+		stopTasks();
+	}
+}
+
+void stopTasks() 
+{
+	for (byte i = 0; i < MAX_TASKS; ++i)
+	{
+		if (tasks[i] != NULL)
+			tasks[i]->stop();
 	}
 }
 

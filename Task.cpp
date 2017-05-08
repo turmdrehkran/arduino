@@ -54,7 +54,8 @@ void Task::onAfterExecution()
 {
 	lastExecutionTime = millis();
 	numberOfPerformings--;
-	if (numberOfPerformings <= 0) {
+	if (numberOfPerformings <= 0) 
+	{
 		stop();
 	}
 }

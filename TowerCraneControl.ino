@@ -1,7 +1,8 @@
+#include "CommandTransceiver.h"
 #include <Keypad.h>
 #include "LedBlinkTask.h"
 #include "Task.h"
-
+#include "CommandTransceiver.h"
 
 byte keys[2][3]{
 	{ 1, 3, 5 },
@@ -13,16 +14,19 @@ byte colPins[3] = { 3, 4, 5 };
 
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, 2, 3);
 
-Task* tasks[6];
+const byte MAX_TASKS = 6;
+Task* tasks[MAX_TASKS];
 
 void setup()
 {
+	CommandTransceiver.init();
+
 	tasks[0] = new LedBlinkTask();
-	tasks[0]->init(50, 12);
+	tasks[0]->init(50, 11);
 	tasks[1] = new LedBlinkTask();
 	tasks[1]->init(100, 13);
 	tasks[2] = new LedBlinkTask();
-	tasks[2]->init(250, 10);
+	tasks[2]->init(100, 12);
 
 	tasks[3] = NULL;
 	tasks[4] = NULL;
@@ -36,37 +40,26 @@ void loop()
 	updateTasks();
 	updateKeys();
 
-	if (keypad.getState() == IDLE && Serial.available()) 
+	if (keypad.getState() == IDLE && CommandTransceiver.isAvailable()) 
 	{
-		// readStringUntil('\n');
-		String command = Serial.readStringUntil('\n');
-		Serial.println(command);
-
-		// MOVE [MotorIndex] [NumberOfPerformings], z.B. MOVE 00 100, MOVE 01 2000, MOVE 03 2
-		if (command.startsWith("MOVE")) 
+		Serial.print(".");
+		for (byte i = 0; i < MAX_TASKS; ++i) 
 		{
-			// index von 0 bis 9 möglich...
-			int motorIndex = command.substring(5, 7).toInt();
-			int numberOfPerformings = command.substring(8).toInt();
-			Serial.println(motorIndex);
-			Serial.println(numberOfPerformings);
-
-			if (motorIndex < 3)
-				tasks[motorIndex]->start(numberOfPerformings);
+			if (tasks[i] != NULL)
+				tasks[i]->stop();
 		}
-		else if (command == "STOP")
-		{
-			tasks[0]->stop();
-		}
+		CommandTransceiver.setTasks(tasks, MAX_TASKS);
 	}
 }
 
 void updateTasks()
 {
-	for (byte i = 0; i < 6; ++i)
+	for (byte i = 0; i < MAX_TASKS; ++i)
 	{
-		if (tasks[i] != NULL)
+		if (tasks[i] != NULL) 
+		{
 			tasks[i]->update();
+		}
 	}
 }
 

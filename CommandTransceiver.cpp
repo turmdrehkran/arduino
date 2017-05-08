@@ -4,15 +4,14 @@
 
 #include "CommandTransceiver.h"
 
-void CommandTransceiverClass::receive()
+String CommandTransceiverClass::receive()
 {
 	Serial.println(F("receive..."));
-	commands = Serial.readString();
+	return Serial.readString();
 }
 
 void CommandTransceiverClass::init()
 {
-	messages = new Queue(sizeof(Command), 10, FIFO, false);
 }
 
 bool CommandTransceiverClass::isAvailable()
@@ -22,14 +21,14 @@ bool CommandTransceiverClass::isAvailable()
 
 bool CommandTransceiverClass::setTasks(Task** tasks, byte length)
 {
-	receive();
+	String commands = receive();
 
 	char buf[commands.length()];
 	commands.toCharArray(buf, sizeof(buf));
 	char *p = buf;
 	char *str;
 	while ((str = strtok_r(p, ";", &p)) != NULL)
-	{ 
+	{
 		Serial.println(str);
 		String command = String(str);
 		// MOVE [MotorIndex] [NumberOfPerformings], z.B. MOVE 00 100, MOVE 01 2000, MOVE 03 2
@@ -51,13 +50,29 @@ bool CommandTransceiverClass::setTasks(Task** tasks, byte length)
 				tasks[j]->stop();
 			}
 		}
+
 	}
-
-	
-
 	return true;
 }
 
+void CommandTransceiverClass::send(MessageType type, byte motorId)
+{
+	String message;
+	if (type == MessageType::Response) 
+	{
+		message = F("FINISHED ");
+	}
+	else if (type == MessageType::Cancelation) 
+	{
+		message = F("CANCELED ");
+	}
+
+	if (message.length() > 0) 
+	{
+		message += motorId;
+		Serial.println(message);
+	}
+}
 
 CommandTransceiverClass CommandTransceiver;
 

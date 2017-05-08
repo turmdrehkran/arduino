@@ -11,8 +11,7 @@ Task::Task()
 void Task::init(uint16_t delay, uint16_t pin)
 {
 	this->delayTime = delay;
-	lastExecutionTime = 0L;
-	isRunning = false;
+	stop();
 }
 
 void Task::start()
@@ -26,11 +25,17 @@ void Task::start(uint16_t numberOfPerformings)
 	isRunning = true;
 }
 
-void Task::stop()
+bool Task::stop()
 {
+	if (!isRunning) 
+	{
+		return false;
+	}
+
 	isRunning = false;
 	lastExecutionTime = 0L;
 	numberOfPerformings = 0;
+	return true;
 }
 
 void Task::lock()
@@ -50,14 +55,14 @@ bool Task::isExecutionTime()
 	return lastExecutionTime + delayTime < millis() && isRunning && canExecuted && numberOfPerformings > 0;
 }
 
-void Task::onAfterExecution()
+bool Task::onAfterExecution()
 {
 	lastExecutionTime = millis();
 	numberOfPerformings--;
 	if (numberOfPerformings <= 0) 
 	{
-		stop();
+		return stop();
 	}
-	// TODO Callback-Method aufrufen
+	return false;
 }
 

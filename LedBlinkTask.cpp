@@ -27,17 +27,18 @@ void LedBlinkTask::start(uint16_t numberOfPerformings)
 	Task::start(2 * numberOfPerformings);
 }
 
-void LedBlinkTask::stop()
+bool LedBlinkTask::stop()
 {
 	digitalWrite(ledPin, false);
-	Task::stop();
+	return Task::stop();
 }
 
-void LedBlinkTask::update()
+bool LedBlinkTask::update()
 {
 	if (isExecutionTime()) {
 		digitalWrite(ledPin, toggle);
 		toggle = !toggle;
-		onAfterExecution();
+		return onAfterExecution();
 	}
+	return false;
 }

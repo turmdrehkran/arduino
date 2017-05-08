@@ -59,8 +59,10 @@ void stopTasks()
 {
 	for (byte i = 0; i < MAX_TASKS; ++i)
 	{
-		if (tasks[i] != NULL)
-			tasks[i]->stop();
+		if (tasks[i] != NULL && tasks[i]->stop())
+		{
+			CommandTransceiver.send(MessageType::Cancelation, i);
+		}
 	}
 }
 
@@ -70,7 +72,10 @@ void updateTasks()
 	{
 		if (tasks[i] != NULL) 
 		{
-			tasks[i]->update();
+			if (tasks[i]->update())
+			{
+				CommandTransceiver.send(MessageType::Response, i);
+			}
 		}
 	}
 }

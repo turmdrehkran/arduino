@@ -18,10 +18,12 @@ protected:
 	bool canExecuted;
 
 	bool isExecutionTime();
-	void onAfterExecution();
+
+	// Returned true by last execution
+	bool onAfterExecution();
 
 	uint16_t numberOfPerformings;
-	const uint16_t maxNumberOfPerformings = 511;
+	const uint16_t maxNumberOfPerformings = 65000;
 
 public:
 	Task();
@@ -29,8 +31,10 @@ public:
 	virtual void init(uint16_t delay, uint16_t pin);
 	virtual void start();
 	virtual void start(uint16_t numberOfPerformings);
-	virtual void stop();
-	virtual void update() = 0;
+	virtual bool stop();
+
+	// Returned true by last execution
+	virtual bool update() = 0;
 
 	virtual void lock();
 	virtual void unlock();

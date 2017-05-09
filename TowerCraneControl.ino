@@ -33,9 +33,9 @@ void setup()
 	tasks[4] = NULL;
 	tasks[5] = NULL;
 
-	Serial.begin(9600);
-
 	isTaskSet = false;
+	
+	keypad.setHoldTime(1000);
 }
 
 void loop()
@@ -61,7 +61,12 @@ void stopTasks()
 	{
 		if (tasks[i] != NULL && tasks[i]->stop())
 		{
-			CommandTransceiver.send(MessageType::Cancelation, i);
+			// Only send Cancelation message if the task does not started by keypad
+			if (keypad.key[i].kstate == IDLE) 
+			{
+				CommandTransceiver.send(MessageType::Cancelation, i);
+
+			}
 		}
 	}
 }
@@ -74,6 +79,7 @@ void updateTasks()
 		{
 			if (tasks[i]->update())
 			{
+				// FIX On single step the task will be send a Response too
 				CommandTransceiver.send(MessageType::Response, i);
 			}
 		}
@@ -111,9 +117,13 @@ void interpretInteraction(char command, KeyState state)
 	{
 	case PRESSED:
 		lockTask(command);
-		tasks[command]->start();
+		// Single Step
+		tasks[command]->start(1);
 		break;
 	case HOLD:
+		// Start Task
+		lockTask(command);
+		tasks[command]->start();
 		break;
 	case RELEASED:
 		break;

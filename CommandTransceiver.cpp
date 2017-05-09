@@ -12,6 +12,7 @@ String CommandTransceiverClass::receive()
 
 void CommandTransceiverClass::init()
 {
+	Serial.begin(9600);
 }
 
 bool CommandTransceiverClass::isAvailable()

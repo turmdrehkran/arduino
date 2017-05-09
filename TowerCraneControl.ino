@@ -61,12 +61,7 @@ void stopTasks()
 	{
 		if (tasks[i] != NULL && tasks[i]->stop())
 		{
-			// Only send Cancelation message if the task does not started by keypad
-			if (keypad.key[i].kstate == IDLE) 
-			{
-				CommandTransceiver.send(MessageType::Cancelation, i);
-
-			}
+			CommandTransceiver.send(MessageType::Cancelation, i);
 		}
 	}
 }

@@ -77,6 +77,8 @@ void StepMotorControl::idle_update()
 	else
 	{
 		// stay in IDLE
+		lastState = currentState;
+		currentState = StepMotorStates::IDLE;
 	}
 
 	if (currentState != lastState)

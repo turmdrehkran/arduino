@@ -21,22 +21,26 @@ class StepMotorControl
 		AUTOMATIC
 	};
 
+	enum Kleenean 
+	{
+		False,
+		True,
+		Maybe
+	};
+
 private:
 	byte notEnabledPin;
 	byte stepPin;
 	byte directionPin;
 
-	byte btnLeftPin;
-	byte btnRightPin;
-
-	byte lightBarrierLeftPin;
-	byte lightBarrierRightPin;
-
 	bool serialAvailable;
+
+	byte input;
 
 	unsigned int defaultInterval;
 	unsigned int interval;
 	unsigned long lastExecutionTime;
+
 	StepMotorStates currentState;
 	StepMotorStates lastState;
 
@@ -47,39 +51,14 @@ private:
 	void right_update();
 	void automatic_update();
 
+	bool interpretInput(Kleenean btnLeft, Kleenean btnRight, Kleenean lbLeft, Kleenean lbRight, Kleenean automatic);
+
 public:
+	void setInput(byte input);
 	void init(unsigned int defaultInterval);
 	void update();
 
-	void setMotorHeadPins(byte notEnabledPin, byte stepPin, byte directionPin)
-	{
-		this->notEnabledPin = notEnabledPin;
-		pinMode(notEnabledPin, OUTPUT);
-
-		this->stepPin = stepPin;
-		pinMode(stepPin, OUTPUT);
-
-		this->directionPin = directionPin;
-		pinMode(directionPin, OUTPUT);
-	}
-
-	void setBtnPins(byte btnLeftPin, byte btnRightPin)
-	{
-		this->btnLeftPin = btnLeftPin;
-		pinMode(btnLeftPin, INPUT);
-
-		this->btnRightPin = btnRightPin;
-		pinMode(btnRightPin, INPUT);
-	}
-
-	void setLightBarrierPins(byte lightBarrierLeftPin, byte lightBarrierRightPin)
-	{
-		this->lightBarrierLeftPin = lightBarrierLeftPin;
-		pinMode(lightBarrierLeftPin, INPUT);
-
-		this->lightBarrierRightPin = lightBarrierRightPin;
-		pinMode(lightBarrierRightPin, INPUT);
-	}
+	void setMotorHeadPins(byte notEnabledPin, byte stepPin, byte directionPin);
 };
 
 #endif

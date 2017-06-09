@@ -5,8 +5,23 @@ Software für die Arduino Steuerung von
 @tobiasmueller
 @jukirsch
 
+## Simple Parallel State Machines
+Die Statemaschinen der 3 Motoren laufen unabhängig von einander innerhalb der loop.
 
-Befehle (Serielle Schnittstelle):
+```
+void loop() 
+{
+	rotator.update();
+	trolley.Update();
+	winch.update();
+}
+```
+
+## Testboard
+
+
+~~
+## Befehle (Serielle Schnittstelle):
 Befehle können über die serielle Schnittstelle (9600 Baudrate) gesendet werden. Diese werden mit einem ";" terminiert.
 
 MOVE-Befehl 
@@ -18,3 +33,4 @@ Steps gibt an, wie oft eine bestimmte Tätigkeit ausgeführt werden soll, im Tes
 Beispiele:
 MOVE 00 1000;
 STOP;
+~~

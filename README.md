@@ -20,8 +20,8 @@ void loop()
 ## Testboard
 
 
-~~
 ## Befehle (Serielle Schnittstelle):
+~~
 Befehle können über die serielle Schnittstelle (9600 Baudrate) gesendet werden. Diese werden mit einem ";" terminiert.
 
 MOVE-Befehl 

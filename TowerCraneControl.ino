@@ -1,32 +1,57 @@
 #include "InputController.h"
 #include "StepMotorControl.h"
 
-StepMotorControl stepMotorControl;
-InputController input;
+StepMotorControl winch;
+InputController inputWinch;
+
+StepMotorControl trolley;
+InputController inputTrolley;
+
+StepMotorControl rotator;
+InputController inputRotator;
 
 void setup()
 {
-	stepMotorControl.init(1);
-	stepMotorControl.setMotorHeadPins(5, 4, 3);
-	input.init();
+	winch.init(1);
+	winch.setMotorHeadPins(5, 4, 3);
+	inputWinch.init();
 
 	byte btpins[] = { 28, 29 };
-	input.initButtons(btpins, 2);
+	inputWinch.initButtons(btpins, 2);
 
 	byte lspins[] = { 8 };
-	input.initLightBarriers(lspins, 1);
+	inputWinch.initLightBarriers(lspins, 1);
+
+	trolley.init(2);
+	trolley.setMotorHeadPins(16, 15, 14);
+	inputTrolley.init();
+	byte btpins_trolley[] = { 30, 31 };
+	inputTrolley.initButtons(btpins_trolley, 2);
+	byte lspins_trolley[] = { 8 };
+	inputTrolley.initLightBarriers(lspins_trolley, 1);
+
+	rotator.init(1);
+	rotator.setMotorHeadPins(46, 45, 44);
+	inputRotator.init();
+	byte btpins_rotator[] = { 32, 33 };
+	inputRotator.initButtons(btpins_rotator, 2);
+	byte lspins_rotator[] = { 8 };
+	inputRotator.initLightBarriers(lspins_rotator, 1);
 
 	Serial.begin(9600);
 }
 
 void loop()
 {
-	// read serial
-	
-	input.update();
-	byte i = input.getInput();
-	//Serial.println(i, BIN);
+	inputWinch.update();
+	winch.setInput(inputWinch.getInput());
+	winch.update();
 
-	stepMotorControl.setInput(i);
-	stepMotorControl.update();
+	inputTrolley.update();
+	trolley.setInput(inputTrolley.getInput());
+	trolley.update();
+
+	inputRotator.update();
+	rotator.setInput(inputRotator.getInput());
+	rotator.update();
 }

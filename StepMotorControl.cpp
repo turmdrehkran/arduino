@@ -11,7 +11,7 @@ void StepMotorControl::init(unsigned int defaultInterval)
 	this->defaultInterval = defaultInterval;
 	interval = defaultInterval;
 
-	lastExecutionTime = 0L;
+	lastExecutionTime = 0UL;
 	currentState = StepMotorStates::IDLE; // TODO Überlegen wegen einem State CALIB
 
 	input = B0;
@@ -19,12 +19,12 @@ void StepMotorControl::init(unsigned int defaultInterval)
 
 void StepMotorControl::setInput(byte input)
 {
-	input = input;
+	this->input = input;
 }
 
 void StepMotorControl::update()
 {
-	if ((millis() - lastExecutionTime) > interval)
+	if ((lastExecutionTime + interval) < millis())
 	{
 		lastExecutionTime = millis();
 
@@ -62,6 +62,8 @@ void StepMotorControl::setMotorHeadPins(byte notEnabledPin, byte stepPin, byte d
 
 void StepMotorControl::step()
 {
+	digitalWrite(stepPin, HIGH);
+	digitalWrite(stepPin, LOW);
 }
 
 void StepMotorControl::idle_update()
@@ -70,38 +72,43 @@ void StepMotorControl::idle_update()
 	{
 		digitalWrite(notEnabledPin, HIGH);
 	}
-	
+
 	// left, right, lbLeft, lbRight, Serial
 	//if (digitalRead(btnLeftPin) == HIGH
 	//	&& digitalRead(btnRightPin) == LOW
 	//	&& digitalRead(lightBarrierLeftPin) == LOW) // LEFT 100xx
-	if (interpretInput(Kleenean::True, Kleenean::False, Kleenean::False, Kleenean::Maybe, Kleenean::Maybe))
+	//if (interpretInput(Kleenean::True, Kleenean::False, Kleenean::False, Kleenean::Maybe, Kleenean::Maybe))
+	if (input == B10000000)
 	{
 		lastState = currentState;
 		currentState = StepMotorStates::LEFT;
 	}
-	//else if (digitalRead(btnLeftPin) == LOW
-	//	&& digitalRead(btnRightPin) == HIGH
-	//	&& digitalRead(lightBarrierRightPin) == LOW) // RIGHT 01x0x
-	if (interpretInput(Kleenean::False, Kleenean::True, Kleenean::Maybe, Kleenean::False, Kleenean::Maybe))
+	else if (input == B01000000)
+	////else if (digitalRead(btnLeftPin) == LOW
+	////	&& digitalRead(btnRightPin) == HIGH
+	////	&& digitalRead(lightBarrierRightPin) == LOW) // RIGHT 01x0x
+	//if (interpretInput(Kleenean::False, Kleenean::True, Kleenean::Maybe, Kleenean::False, Kleenean::Maybe))
+
 	{
 		lastState = currentState;
 		currentState = StepMotorStates::RIGHT;
 	}
-	//else if (digitalRead(btnLeftPin) == LOW
-	//	&& digitalRead(btnRightPin) == LOW
-	//	&& serialAvailable) // AUTOMATIC 00xx1 
-	if (interpretInput(Kleenean::False, Kleenean::False, Kleenean::Maybe, Kleenean::Maybe, Kleenean::True))
-	{
-		lastState = currentState;
-		currentState = StepMotorStates::AUTOMATIC;
-	}
+	//else
+	////else if (digitalRead(btnLeftPin) == LOW
+	////	&& digitalRead(btnRightPin) == LOW
+	////	&& serialAvailable) // AUTOMATIC 00xx1 
+	//if (interpretInput(Kleenean::False, Kleenean::False, Kleenean::Maybe, Kleenean::Maybe, Kleenean::True))
+	//{
+	//	lastState = currentState;
+	//	currentState = StepMotorStates::AUTOMATIC;
+	//}
 	else
 	{
 		// stay in IDLE
 		lastState = currentState;
 		currentState = StepMotorStates::IDLE;
 	}
+
 
 	if (currentState != lastState)
 	{
@@ -113,7 +120,7 @@ void StepMotorControl::left_update()
 {
 	if (lastState != currentState)
 	{
-		digitalWrite(directionPin, HIGH);
+		digitalWrite(directionPin, LOW);
 	}
 
 	step();
@@ -134,7 +141,7 @@ void StepMotorControl::right_update()
 {
 	if (lastState != currentState)
 	{
-		digitalWrite(directionPin, LOW);
+		digitalWrite(directionPin, HIGH);
 	}
 
 	step();
@@ -183,23 +190,25 @@ bool StepMotorControl::interpretInput(Kleenean btnLeft, Kleenean btnRight, Kleen
 
 	if (btnRight != Kleenean::Maybe)
 	{
-		result &= (btnLeft == (input & 1 << 6));
+		result &= (btnRight == (input & 1 << 6));
 	}
 
 	if (lbLeft != Kleenean::Maybe)
 	{
-		result &= (btnLeft == (input & 1 << 5));
+		result &= (lbLeft == (input & 1 << 5));
 	}
 
 	if (lbRight != Kleenean::Maybe)
 	{
-		result &= (btnLeft == (input & 1 << 4));
+		result &= (lbRight == (input & 1 << 4));
 	}
 
 	if (automatic != Kleenean::Maybe)
 	{
-		//result |= (btnLeft == (input & 1 << 7));
+		result &= (automatic == (input & 1 << 3));
 	}
+
+	//Serial.println(result);
 
 	return result;
 }

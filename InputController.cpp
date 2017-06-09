@@ -32,7 +32,7 @@ void InputController::initLightBarriers(byte pins[MAX_NUMBER_OF_LIGHTBARRIERS], 
 
 void InputController::update()
 {
-	if ((lasttime + debounceTime) > millis())
+	if ((lasttime + debounceTime) >= millis())
 	{
 		return;
 	}
@@ -42,7 +42,7 @@ void InputController::update()
 	currentInputState = B0;
 
 	update_Buttons();
-	update_LightBarriers();
+	// update_LightBarriers(); // TODO!
 }
 
 byte InputController::getInput()
@@ -55,7 +55,7 @@ void InputController::update_Buttons()
 	for (byte i = 0; i < buttonPinsSize; i++)
 	{
 		byte currentState = digitalRead(buttonPins[i]);
-		currentInputState |= (!currentState << (8 - i - 1));
+		currentInputState |= (currentState << (8 - i - 1));
 	}
 }
 
@@ -64,7 +64,12 @@ void InputController::update_LightBarriers()
 	for (byte i = 0; i < lightBarrierPinsSize; i++)
 	{
 		byte currentState = digitalRead(lightBarrierPins[i]);
-		currentInputState |= (!currentState << (6 - i - 1));
+		currentInputState |= (currentState << (6 - i - 1));
 	}
+}
+
+void InputController::update_SerialInterface()
+{
+	
 }
 

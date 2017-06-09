@@ -3,19 +3,18 @@
 #ifndef _COMMANDTRANSCEIVER_h
 #define _COMMANDTRANSCEIVER_h
 
-#include "Task.h"
-
 #if defined(ARDUINO) && ARDUINO >= 100
 	#include "arduino.h"
 #else
 	#include "WProgram.h"
 #endif
 
-enum MessageType
+enum MessageResponse
 {
-	Response,
-	Request,
-	Cancelation
+	Trying = 100,
+	OK = 200,
+	Failed = 501
+	// and many more...
 };
 
 class CommandTransceiverClass
@@ -25,10 +24,10 @@ private:
 
  public:
 	void init();
+	void update();
 	bool isAvailable();
 
-	bool setTasks(Task** tasks, byte length);
-	void send(MessageType type, byte motorId);
+	void send(MessageResponse type, byte motorId);
 };
 
 extern CommandTransceiverClass CommandTransceiver;

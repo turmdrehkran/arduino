@@ -43,6 +43,7 @@ void InputController::update()
 
 	update_Buttons();
 	// update_LightBarriers(); // TODO!
+	// update_SerialInterface();
 }
 
 byte InputController::getInput()
@@ -70,6 +71,7 @@ void InputController::update_LightBarriers()
 
 void InputController::update_SerialInterface()
 {
-	
+	byte currentState = LOW;
+	currentInputState |= (currentState << (4 - 1));
 }
 

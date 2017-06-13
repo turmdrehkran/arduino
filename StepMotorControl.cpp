@@ -73,17 +73,17 @@ void StepMotorControl::idle_update()
 		digitalWrite(notEnabledPin, HIGH);
 	}
 
-	// left, right, lbLeft, lbRight, Serial
+	// left, right, lbLeft, lbRight, Serial, reserved,  reserved,  reserved
 	//if (digitalRead(btnLeftPin) == HIGH
 	//	&& digitalRead(btnRightPin) == LOW
 	//	&& digitalRead(lightBarrierLeftPin) == LOW) // LEFT 100xx
 	//if (interpretInput(Kleenean::True, Kleenean::False, Kleenean::False, Kleenean::Maybe, Kleenean::Maybe))
-	if (input == B10000000)
+	if (input == B10000000 || input == B10010000)
 	{
 		lastState = currentState;
 		currentState = StepMotorStates::LEFT;
 	}
-	else if (input == B01000000)
+	else if (input == B01000000 || input == B01100000)
 	////else if (digitalRead(btnLeftPin) == LOW
 	////	&& digitalRead(btnRightPin) == HIGH
 	////	&& digitalRead(lightBarrierRightPin) == LOW) // RIGHT 01x0x
@@ -94,14 +94,15 @@ void StepMotorControl::idle_update()
 		currentState = StepMotorStates::RIGHT;
 	}
 	//else
+	else if ((input & B00001000) == B00001000) // TODO stimmt was net
 	////else if (digitalRead(btnLeftPin) == LOW
 	////	&& digitalRead(btnRightPin) == LOW
 	////	&& serialAvailable) // AUTOMATIC 00xx1 
 	//if (interpretInput(Kleenean::False, Kleenean::False, Kleenean::Maybe, Kleenean::Maybe, Kleenean::True))
-	//{
-	//	lastState = currentState;
-	//	currentState = StepMotorStates::AUTOMATIC;
-	//}
+	{
+		lastState = currentState;
+		currentState = StepMotorStates::AUTOMATIC;
+	}
 	else
 	{
 		// stay in IDLE

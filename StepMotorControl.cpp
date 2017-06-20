@@ -22,7 +22,7 @@ void StepMotorControl::setInput(byte input)
 	this->input = input;
 }
 
-void StepMotorControl::update()
+void StepMotorControl::update() // TODO in Update-Methode die Eingabe übergeben
 {
 	if ((lastExecutionTime + interval) < millis())
 	{
@@ -70,35 +70,22 @@ void StepMotorControl::idle_update()
 {
 	if (lastState != currentState)
 	{
-		digitalWrite(notEnabledPin, HIGH);
+		digitalWrite(notEnabledPin, LOW);
 	}
 
 	// left, right, lbLeft, lbRight, Serial, reserved,  reserved,  reserved
-	//if (digitalRead(btnLeftPin) == HIGH
-	//	&& digitalRead(btnRightPin) == LOW
-	//	&& digitalRead(lightBarrierLeftPin) == LOW) // LEFT 100xx
-	//if (interpretInput(Kleenean::True, Kleenean::False, Kleenean::False, Kleenean::Maybe, Kleenean::Maybe))
-	if (input == B10000000 || input == B10010000)
+	if (input == B10000000 || input == B10010000) // LEFT 10000 ||
 	{
 		lastState = currentState;
 		currentState = StepMotorStates::LEFT;
 	}
-	else if (input == B01000000 || input == B01100000)
-	////else if (digitalRead(btnLeftPin) == LOW
-	////	&& digitalRead(btnRightPin) == HIGH
-	////	&& digitalRead(lightBarrierRightPin) == LOW) // RIGHT 01x0x
-	//if (interpretInput(Kleenean::False, Kleenean::True, Kleenean::Maybe, Kleenean::False, Kleenean::Maybe))
-
+	else if (input == B01000000 || input == B01100000) // RIGHT 01x0x
 	{
 		lastState = currentState;
 		currentState = StepMotorStates::RIGHT;
 	}
-	//else
-	else if ((input & B00001000) == B00001000) // TODO stimmt was net
-	////else if (digitalRead(btnLeftPin) == LOW
-	////	&& digitalRead(btnRightPin) == LOW
-	////	&& serialAvailable) // AUTOMATIC 00xx1 
-	//if (interpretInput(Kleenean::False, Kleenean::False, Kleenean::Maybe, Kleenean::Maybe, Kleenean::True))
+	else if ((input & B00001000) == B00001000) // AUTOMATIC 00xx1 
+											   // TODO StateMachine erweitern mit Automatic_Left und Automatic_Right. Automatic ist A_IDLE. 
 	{
 		lastState = currentState;
 		currentState = StepMotorStates::AUTOMATIC;
@@ -126,13 +113,9 @@ void StepMotorControl::left_update()
 
 	step();
 
-	//if (digitalRead(btnLeftPin) == LOW ||
-	//	digitalRead(lightBarrierLeftPin) == HIGH) // 0xxxx || xx1xx
-	if (interpretInput(Kleenean::False, Kleenean::Maybe, Kleenean::Maybe, Kleenean::Maybe, Kleenean::Maybe) 
-		| interpretInput(Kleenean::Maybe, Kleenean::Maybe, Kleenean::True, Kleenean::Maybe, Kleenean::Maybe))
+	if ((input & B10000000) != B10000000 || (input & B00100000) == B00100000)  // 0xxxx || xx1xx
 	{
 		// exit action
-
 		lastState = currentState;
 		currentState = StepMotorStates::IDLE;
 	}
@@ -148,13 +131,9 @@ void StepMotorControl::right_update()
 	step();
 
 	// left, right, lbLeft, lbRight, Serial
-	//if (digitalRead(btnRightPin) == LOW ||
-	//	digitalRead(lightBarrierRightPin) == HIGH) // x0xxx || xxx1x
-	if (interpretInput(Kleenean::Maybe, Kleenean::False, Kleenean::Maybe, Kleenean::Maybe, Kleenean::Maybe)
-		| interpretInput(Kleenean::Maybe, Kleenean::Maybe, Kleenean::Maybe, Kleenean::True, Kleenean::Maybe))
+	if ((input & B01000000) != B01000000 || (input & B00010000) == B00010000) // x0xxx || xxx1x
 	{
 		// exit action
-
 		lastState = currentState;
 		currentState = StepMotorStates::IDLE;
 	}
@@ -165,7 +144,8 @@ void StepMotorControl::automatic_update()
 	if (lastState != currentState)
 	{
 		// entry Action
-		// set interval
+		// TODO set interval
+		// TODO Wo werden die Anzahl an Steps gespeichert, welche gefahren werden müssen
 	}
 
 	// do it!
@@ -174,44 +154,9 @@ void StepMotorControl::automatic_update()
 	if (true) // !(00000)
 	{
 		// exit action
-		interval = defaultInterval;
+		interval = defaultInterval; // reset interval
 
 		lastState = currentState;
 		currentState = StepMotorStates::IDLE;
 	}
 }
-
-bool StepMotorControl::interpretInput(Kleenean btnLeft, Kleenean btnRight, Kleenean lbLeft, Kleenean lbRight, Kleenean automatic)
-{
-	bool result = true;
-	if (btnLeft != Kleenean::Maybe) 
-	{
-		result &= (btnLeft == (input & 1 << 7));
-	}
-
-	if (btnRight != Kleenean::Maybe)
-	{
-		result &= (btnRight == (input & 1 << 6));
-	}
-
-	if (lbLeft != Kleenean::Maybe)
-	{
-		result &= (lbLeft == (input & 1 << 5));
-	}
-
-	if (lbRight != Kleenean::Maybe)
-	{
-		result &= (lbRight == (input & 1 << 4));
-	}
-
-	if (automatic != Kleenean::Maybe)
-	{
-		result &= (automatic == (input & 1 << 3));
-	}
-
-	//Serial.println(result);
-
-	return result;
-}
-
-

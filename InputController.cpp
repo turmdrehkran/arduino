@@ -26,7 +26,7 @@ void InputController::initLightBarriers(byte pins[MAX_NUMBER_OF_LIGHTBARRIERS], 
 	for (byte i = 0; i < lightBarrierPinsSize; i++)
 	{
 		this->lightBarrierPins[i] = pins[i];
-		pinMode(this->lightBarrierPins[i], INPUT_PULLUP);
+		pinMode(this->lightBarrierPins[i], INPUT);
 	}
 }
 
@@ -42,7 +42,7 @@ void InputController::update()
 	currentInputState = B0;
 
 	update_Buttons();
-	// update_LightBarriers(); // TODO!
+	update_LightBarriers(); 
 	// update_SerialInterface();
 }
 

@@ -21,13 +21,6 @@ class StepMotorControl
 		AUTOMATIC
 	};
 
-	enum Kleenean 
-	{
-		False,
-		True,
-		Maybe
-	};
-
 private:
 	byte notEnabledPin;
 	byte stepPin;
@@ -50,8 +43,6 @@ private:
 	void left_update();
 	void right_update();
 	void automatic_update();
-
-	bool interpretInput(Kleenean btnLeft, Kleenean btnRight, Kleenean lbLeft, Kleenean lbRight, Kleenean automatic);
 
 public:
 	void setInput(byte input);

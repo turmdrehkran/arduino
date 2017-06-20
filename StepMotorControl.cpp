@@ -4,25 +4,18 @@
 
 #include "StepMotorControl.h"
 
-void StepMotorControl::init(unsigned int defaultInterval)
+void StepMotorControl::init(byte identifier, unsigned int defaultInterval)
 {
-	serialAvailable = false;
-
+	this->identifier = identifier;
 	this->defaultInterval = defaultInterval;
 	interval = defaultInterval;
 
 	lastExecutionTime = 0UL;
+	currentSteps = 0;
 	currentState = StepMotorStates::IDLE; // TODO Überlegen wegen einem State CALIB
-
-	input = B0;
 }
 
-void StepMotorControl::setInput(byte input)
-{
-	this->input = input;
-}
-
-void StepMotorControl::update() // TODO in Update-Methode die Eingabe übergeben
+void StepMotorControl::update(byte input) // TODO in Update-Methode die Eingabe übergeben
 {
 	if ((lastExecutionTime + interval) < millis())
 	{
@@ -31,16 +24,22 @@ void StepMotorControl::update() // TODO in Update-Methode die Eingabe übergeben
 		switch (currentState)
 		{
 		case StepMotorStates::IDLE:
-			idle_update();
+			idle_update(input);
 			break;
 		case StepMotorStates::LEFT:
-			left_update();
+			left_update(input);
 			break;
 		case StepMotorStates::RIGHT:
-			right_update();
+			right_update(input);
 			break;
-		case StepMotorStates::AUTOMATIC:
-			automatic_update();
+		case StepMotorStates::AUTOMATIC_IDLE:
+			automatic_update(input);
+			break;
+		case StepMotorStates::AUTOMATIC_LEFT:
+			automatic_update(input);
+			break;
+		case StepMotorStates::AUTOMATIC_RIGHT:
+			automatic_update(input);
 			break;
 		default:
 			break;
@@ -64,9 +63,11 @@ void StepMotorControl::step()
 {
 	digitalWrite(stepPin, HIGH);
 	digitalWrite(stepPin, LOW);
+
+	// TODO count steps: left -1 and right +1
 }
 
-void StepMotorControl::idle_update()
+void StepMotorControl::idle_update(byte input)
 {
 	if (lastState != currentState)
 	{
@@ -74,21 +75,21 @@ void StepMotorControl::idle_update()
 	}
 
 	// left, right, lbLeft, lbRight, Serial, reserved,  reserved,  reserved
-	if (input == B10000000 || input == B10010000) // LEFT 10000 ||
+	if (input == B10000000 || input == B10010000) // LEFT 10000 || 10010
 	{
 		lastState = currentState;
 		currentState = StepMotorStates::LEFT;
 	}
-	else if (input == B01000000 || input == B01100000) // RIGHT 01x0x
+	else if (input == B01000000 || input == B01100000) // RIGHT 01000 || 01100
 	{
 		lastState = currentState;
 		currentState = StepMotorStates::RIGHT;
 	}
-	else if ((input & B00001000) == B00001000) // AUTOMATIC 00xx1 
+	else if ((input & B00001000) == B00001000) // AUTOMATIC 00xx1
 											   // TODO StateMachine erweitern mit Automatic_Left und Automatic_Right. Automatic ist A_IDLE. 
 	{
 		lastState = currentState;
-		currentState = StepMotorStates::AUTOMATIC;
+		currentState = StepMotorStates::AUTOMATIC_IDLE;
 	}
 	else
 	{
@@ -104,7 +105,7 @@ void StepMotorControl::idle_update()
 	}
 }
 
-void StepMotorControl::left_update()
+void StepMotorControl::left_update(byte input)
 {
 	if (lastState != currentState)
 	{
@@ -121,7 +122,7 @@ void StepMotorControl::left_update()
 	}
 }
 
-void StepMotorControl::right_update()
+void StepMotorControl::right_update(byte input)
 {
 	if (lastState != currentState)
 	{
@@ -139,7 +140,7 @@ void StepMotorControl::right_update()
 	}
 }
 
-void StepMotorControl::automatic_update()
+void StepMotorControl::automatic_update(byte input)
 {
 	if (lastState != currentState)
 	{

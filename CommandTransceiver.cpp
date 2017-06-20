@@ -69,20 +69,29 @@ bool CommandTransceiverClass::isAvailable()
 void CommandTransceiverClass::send(MessageResponse type, byte motorId)
 {
 	String message;
+	message.reserve(32);
 
 	message += type;
 
 	if (type == MessageResponse::Trying)
 	{
-		message = F(" Trying ");
+		message += F(" Trying ");
 	}
 	else if (type == MessageResponse::OK)
 	{
-		message = F(" OK ");
+		message += F(" OK ");
 	}
-	else if (type == MessageResponse::Failed)
+	else if (type == MessageResponse::LeftLightbarrierReached)
 	{
-		message = F(" Failed ");
+		message += F(" LeftLightbarrierReached ");
+	}
+	else if (type == MessageResponse::RightLightbarrierReached)
+	{
+		message += F(" RightLightbarrierReached ");
+	}
+	else if (type == MessageResponse::RequestParsingFailed)
+	{
+		message += F(" RequestParsingFailed ");
 	}
 
 	if (message.length() > 0) 

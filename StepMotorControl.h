@@ -18,17 +18,17 @@ class StepMotorControl
 		IDLE,
 		LEFT,
 		RIGHT,
-		AUTOMATIC
+		AUTOMATIC_IDLE,
+		AUTOMATIC_LEFT,
+		AUTOMATIC_RIGHT
 	};
 
 private:
+	byte identifier;
+
 	byte notEnabledPin;
 	byte stepPin;
 	byte directionPin;
-
-	bool serialAvailable;
-
-	byte input;
 
 	unsigned int defaultInterval;
 	unsigned int interval;
@@ -37,17 +37,18 @@ private:
 	StepMotorStates currentState;
 	StepMotorStates lastState;
 
+	int currentSteps;
+
 	void step();
 
-	void idle_update();
-	void left_update();
-	void right_update();
-	void automatic_update();
+	void idle_update(byte input);
+	void left_update(byte input);
+	void right_update(byte input);
+	void automatic_update(byte input);
 
 public:
-	void setInput(byte input);
-	void init(unsigned int defaultInterval);
-	void update();
+	void init(byte identifier, unsigned int defaultInterval);
+	void update(byte input);
 
 	void setMotorHeadPins(byte notEnabledPin, byte stepPin, byte directionPin);
 };

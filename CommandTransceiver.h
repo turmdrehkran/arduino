@@ -13,7 +13,9 @@ enum MessageResponse
 {
 	Trying = 100,
 	OK = 200,
-	Failed = 501
+	LeftLightbarrierReached = 510,
+	RightLightbarrierReached = 520,
+	RequestParsingFailed = 600
 	// and many more...
 };
 

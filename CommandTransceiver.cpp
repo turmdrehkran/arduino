@@ -4,67 +4,169 @@
 
 #include "CommandTransceiver.h"
 
-String CommandTransceiverClass::receive()
-{
-	Serial.println(F("receive..."));
-	return Serial.readString();
-}
-
 void CommandTransceiverClass::init()
 {
 	Serial.begin(9600);
+
+	for (byte i = 0; i < COMMAND_LENGTH; ++i)
+	{
+		Command& cmd = commandList[i];
+
+		cmd.MotorID = i;
+		cmd.HoldingTorgue = false;
+		cmd.Direction = Direction::Undefined;
+		cmd.inUsage = false;
+		cmd.NumberOfSteps = 0;
+		cmd.Speed = 0;
+	}
 }
 
 void CommandTransceiverClass::update()
 {
-	if (isAvailable()) 
+	if (Serial.available()) 
 	{
-		String message = receive();
+		reset();
 
-		// TODO
+		Serial.println(F("EMPFANGE:"));
+
+		byte size = Serial.readBytes(input, 256);
+		input[size] = 0;
+		Serial.println(input);
+
+		char* methodParameters;
+		char* line = strtok_r(input, INPUT_DELIMITER, &methodParameters);
+
+		// methode bearbeiten
+		char* methodArgs;
+		char* method = strtok_r(input, METHOD_DELIMITER, &methodArgs);
+
+
+		if (strcasecmp(method, "RUN") == 0)
+		{
+			Serial.println(F("101 PARSING"));
+			interpretMethod_Run(methodArgs, methodParameters);
+
+			for (byte i = 0; i < COMMAND_LENGTH; i++)
+			{
+				Serial.println(commandList[i].MotorID);
+				Serial.println(commandList[i].Speed);
+				Serial.println();
+			}
+		}
+		else if (strcasecmp(method, "SHIT") == 0)
+		{
+			Serial.println(F("102 PARSING"));
+		}
+		else
+		{
+			Serial.println(method);
+			Serial.println(F("400 SYNTAX"));
+			return;
+		}
 	}
+}
+
+void CommandTransceiverClass::reset()
+{
+	for (byte i = 0; i < COMMAND_LENGTH; ++i)
+	{
+		commandList[i].inUsage = false;
+		commandList[i].Speed = 0;
+	}
+}
+
+void CommandTransceiverClass::interpretMethod_Run(char * methodArgs, char * methodParameters)
+{
+	char* save;
+	byte numberOfCommands = 0; // muss kleinergleich COMMAND_LENGTH sein
+	byte IDs[COMMAND_LENGTH];
+
+	char* args = strtok_r(methodArgs, METHOD_DELIMITER, &save);
+	while (methodArgs != 0)
+	{
+		int id = atoi(methodArgs); // TODO errno auslesen und dadurch Syntax-Fehler werfen
+		if (id < 0 || id >= COMMAND_LENGTH)
+		{
+			Serial.println(F("500 SEMANTIC")); // ID out of range
+			return; // Auslesen abbrechen
+		}
+		else
+		{
+			IDs[numberOfCommands] = id;
+			Serial.println(id);
+			numberOfCommands++;
+
+			for (byte i = 0; i < numberOfCommands - 1; i++)
+			{
+				if (IDs[i] == id)
+				{
+					Serial.println(F("500 SEMANTIC")); // ID doppelt in den Argumenten
+					return;
+				}
+			}
+		}
+
+		methodArgs = strtok_r(NULL, METHOD_DELIMITER, &save);
+	}
+
+	save = NULL;
+	char* keyValues = strtok_r(methodParameters, INPUT_DELIMITER, &save);
+
+	// parameter bearbeiten
+	char* keyValuesSave;
+	while (keyValues != 0)
+	{
+		char* key = strtok_r(keyValues, PARAMETER_DELIMITER, &keyValuesSave);
+
+		if (strcasecmp(key, "Speed") == 0)
+		{
+			interpretParameter_Speed(IDs, keyValuesSave, numberOfCommands);
+		}
+		else
+		{
+
+		}
+
+		keyValues = strtok_r(NULL, INPUT_DELIMITER, &save);
+	}
+}
+
+void CommandTransceiverClass::interpretParameter_Speed(byte * IDs, char * values, byte numberOfCommands)
+{
+	char* save;
+	char* value = strtok_r(values, VALUE_DELIMITER, &save);
+
+	while (value != 0)
+	{
+		commandList[COMMAND_LENGTH - numberOfCommands].Speed = strtoul(value, (char**)NULL, 10);
+		numberOfCommands--;
+		value = strtok_r(NULL, VALUE_DELIMITER, &save);
+	}
+
+	if (numberOfCommands != 0)
+	{
+		Serial.println(F("400 SYNTAX")); // too many or less values
+	}
+	// TODO return?
+}
+
+void CommandTransceiverClass::interpretParameter_Direction(byte * IDs, char * values, byte numberOfCommands)
+{
+}
+
+void CommandTransceiverClass::interpretParameter_HoldingTorgue(byte * IDs, char * values, byte numberOfCommands)
+{
+}
+
+void CommandTransceiverClass::interpretParameter_NumberOfSteps(byte * IDs, char * values, byte numberOfCommands)
+{
 }
 
 bool CommandTransceiverClass::isAvailable()
 {
-	return Serial.available();
+	isActive = Serial.available();
+	return isActive;
 }
-
-//bool CommandTransceiverClass::setTasks(Task** tasks, byte length)
-//{
-//	String commands = receive();
-//
-//	char buf[commands.length()];
-//	commands.toCharArray(buf, sizeof(buf));
-//	char *p = buf;
-//	char *str;
-//	while ((str = strtok_r(p, ";", &p)) != NULL)
-//	{
-//		Serial.println(str);
-//		String command = String(str);
-//		// MOVE [MotorIndex] [NumberOfPerformings], z.B. MOVE 00 100, MOVE 01 2000, MOVE 03 2
-//		if (command.startsWith(F("MOVE")))
-//		{
-//			// index von 0 bis 9 möglich...
-//			int motorIndex = command.substring(5, 7).toInt();
-//			int numberOfPerformings = command.substring(8).toInt();
-//			Serial.println(motorIndex);
-//			Serial.println(numberOfPerformings);
-//
-//			if (motorIndex < 3)
-//				tasks[motorIndex]->start(numberOfPerformings);
-//		}
-//		else if (command == F("STOP"))
-//		{
-//			for (int j = 0; j < length; ++j)
-//			{
-//				tasks[j]->stop();
-//			}
-//		}
-//
-//	}
-//	return true;
-//}
 
 void CommandTransceiverClass::send(MessageResponse type, byte motorId)
 {
@@ -73,25 +175,13 @@ void CommandTransceiverClass::send(MessageResponse type, byte motorId)
 
 	message += type;
 
-	if (type == MessageResponse::Trying)
+	if (type == MessageResponse::Operating)
 	{
-		message += F(" Trying ");
+		message += F(" Operating ");
 	}
-	else if (type == MessageResponse::OK)
+	else if (type == MessageResponse::Done)
 	{
-		message += F(" OK ");
-	}
-	else if (type == MessageResponse::LeftLightbarrierReached)
-	{
-		message += F(" LeftLightbarrierReached ");
-	}
-	else if (type == MessageResponse::RightLightbarrierReached)
-	{
-		message += F(" RightLightbarrierReached ");
-	}
-	else if (type == MessageResponse::RequestParsingFailed)
-	{
-		message += F(" RequestParsingFailed ");
+		message += F(" DONE ");
 	}
 
 	if (message.length() > 0) 

@@ -71,7 +71,8 @@ void InputController::update_LightBarriers()
 
 void InputController::update_SerialInterface()
 {
-	byte currentState = LOW;
+	byte currentState = LOW;	// TODO hier commandtransceiver fragen, ob eine serielle Schnittstelle aufgebaut wurde,
+								// wenn ja, ändern alle Motoren ihren State nach AUTOMATIC_IDLE
 	currentInputState |= (currentState << (4 - 1));
 }
 

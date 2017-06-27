@@ -9,20 +9,49 @@
 	#include "WProgram.h"
 #endif
 
+#define INPUT_LENGTH 256
+#define COMMAND_LENGTH 3
+#define INPUT_DELIMITER "\n"
+#define METHOD_DELIMITER " "
+#define PARAMETER_DELIMITER ":"
+#define VALUE_DELIMITER " "
+
+enum Direction : byte
+{
+	Undefined = 0xFF,
+	Left = 0x00,
+	Right = 0x01 // TODO entsprechend LOW/HIGH und der motorenrichtung
+};
+
+typedef struct Command {
+	byte MotorID;
+	unsigned int Speed;
+	Direction Direction;
+	unsigned NumberOfSteps;
+	bool HoldingTorgue;
+	bool inUsage;
+} Command;
+
 enum MessageResponse
 {
-	Trying = 100,
-	OK = 200,
-	LeftLightbarrierReached = 510,
-	RightLightbarrierReached = 520,
-	RequestParsingFailed = 600
+	Operating = 100,
+	Done = 200
 	// and many more...
 };
 
 class CommandTransceiverClass
 {
 private:
-	String receive();
+	bool isActive;
+	char input[INPUT_LENGTH + 1];
+	Command commandList[COMMAND_LENGTH];
+
+	void reset();
+	void interpretMethod_Run(char* methodArgs, char* methodParameters);
+	void interpretParameter_Speed(byte* IDs, char* values, byte numberOfCommands);
+	void interpretParameter_Direction(byte* IDs, char* values, byte numberOfCommands);
+	void interpretParameter_HoldingTorgue(byte* IDs, char* values, byte numberOfCommands);
+	void interpretParameter_NumberOfSteps(byte* IDs, char* values, byte numberOfCommands);
 
  public:
 	void init();

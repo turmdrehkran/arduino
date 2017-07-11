@@ -44,7 +44,9 @@ private:
 	void idle_update(byte input);
 	void left_update(byte input);
 	void right_update(byte input);
-	void automatic_update(byte input);
+	void automatic_idle_update(byte input);
+	void automatic_left_update(byte input);
+	void automatic_right_update(byte input);
 
 public:
 	void init(byte identifier, unsigned int defaultInterval);

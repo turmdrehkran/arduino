@@ -1,5 +1,6 @@
 #include "InputController.h"
 #include "StepMotorControl.h"
+#include "CommandTransceiver.h"
 
 StepMotorControl winchMotor;
 InputController winchInput;
@@ -12,7 +13,8 @@ InputController rotatorInput;
 
 void setup()
 {
-	winchMotor.init(1, 2);
+	CommandTransceiver.init();
+	winchMotor.init(0, 2);
 	winchMotor.setMotorHeadPins(5, 4, 3);
 	winchInput.init();
 	byte winchButtonPins[] = { 28, 29 };
@@ -20,7 +22,7 @@ void setup()
 	byte winchLightBarrierPins[] = { 38 };
 	winchInput.initLightBarriers(winchLightBarrierPins, 1);
 
-	trolleyMotor.init(2, 3);
+	trolleyMotor.init(1, 3);
 	trolleyMotor.setMotorHeadPins(16, 15, 14);
 	trolleyInput.init();
 	byte trolleyButtonPins[] = { 30, 31 };
@@ -28,7 +30,7 @@ void setup()
 	byte trolleyLightBarrierPins[] = { 41, 39 };
 	trolleyInput.initLightBarriers(trolleyLightBarrierPins, 2);
 
-	rotatorMotor.init(3, 10);
+	rotatorMotor.init(2, 10);
 	rotatorMotor.setMotorHeadPins(46, 45, 44);
 	rotatorInput.init();
 	byte rotatorButtonPins[] = { 32, 33 };
@@ -39,6 +41,7 @@ void setup()
 
 void loop()
 {
+	CommandTransceiver.update();
 	updateWinch();
 	updateTrolley();
 	updateRotator();

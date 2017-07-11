@@ -3,6 +3,7 @@
 // 
 
 #include "StepMotorControl.h"
+#include "CommandTransceiver.h"
 
 void StepMotorControl::init(byte identifier, unsigned int defaultInterval)
 {
@@ -33,13 +34,13 @@ void StepMotorControl::update(byte input) // TODO in Update-Methode die Eingabe 
 			right_update(input);
 			break;
 		case StepMotorStates::AUTOMATIC_IDLE:
-			automatic_update(input);
+			automatic_idle_update(input);
 			break;
 		case StepMotorStates::AUTOMATIC_LEFT:
-			automatic_update(input);
+			automatic_left_update(input);
 			break;
 		case StepMotorStates::AUTOMATIC_RIGHT:
-			automatic_update(input);
+			automatic_right_update(input);
 			break;
 		default:
 			break;
@@ -85,7 +86,7 @@ void StepMotorControl::idle_update(byte input)
 		lastState = currentState;
 		currentState = StepMotorStates::RIGHT;
 	}
-	else if ((input & B00001000) == B00001000) // AUTOMATIC 00xx1
+	else if (CommandTransceiver.isAvailable()) // AUTOMATIC 00xx1
 											   // TODO StateMachine erweitern mit Automatic_Left und Automatic_Right. Automatic ist A_IDLE. 
 	{
 		lastState = currentState;
@@ -140,7 +141,7 @@ void StepMotorControl::right_update(byte input)
 	}
 }
 
-void StepMotorControl::automatic_update(byte input)
+void StepMotorControl::automatic_idle_update(byte input)
 {
 	if (lastState != currentState)
 	{
@@ -150,14 +151,70 @@ void StepMotorControl::automatic_update(byte input)
 	}
 
 	// do it!
-	// automatic states?
+	Command* command = CommandTransceiver.getCommand(identifier);
 
-	if (true) // !(00000)
+	if (command != nullptr && !command->Delivered) 
+	{
+		command->Delivered = true;
+		interval = command->Speed;
+		currentSteps = command->NumberOfSteps;
+
+		if (command->Direction == 'L') 
+		{
+			lastState = currentState;
+			currentState = StepMotorStates::AUTOMATIC_LEFT;
+		}
+		else if (command->Direction == 'R') 
+		{
+			lastState = currentState;
+			currentState = StepMotorStates::AUTOMATIC_RIGHT;
+		}
+	}
+
+	if (!CommandTransceiver.isAvailable())
 	{
 		// exit action
 		interval = defaultInterval; // reset interval
 
 		lastState = currentState;
 		currentState = StepMotorStates::IDLE;
+	}
+}
+
+void StepMotorControl::automatic_left_update(byte input)
+{
+	if (lastState != currentState)
+	{
+		digitalWrite(directionPin, LOW);
+	}
+
+	step();
+	currentSteps--;
+
+	// TODO neuer Befehl unterbricht aktuellen
+	if (currentSteps <= 0 || (input & B00100000) == B00100000)  // 0xxxx || xx1xx
+	{
+		// exit action
+		lastState = currentState;
+		currentState = StepMotorStates::AUTOMATIC_IDLE;
+	}
+}
+
+void StepMotorControl::automatic_right_update(byte input)
+{
+	if (lastState != currentState)
+	{
+		digitalWrite(directionPin, HIGH);
+	}
+
+	step();
+	currentSteps--;
+
+	// left, right, lbLeft, lbRight, Serial
+	if (currentSteps <= 0 || (input & B00010000) == B00010000) // x0xxx || xxx1x
+	{
+		// exit action
+		lastState = currentState;
+		currentState = StepMotorStates::AUTOMATIC_IDLE;
 	}
 }

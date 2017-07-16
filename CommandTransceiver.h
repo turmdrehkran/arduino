@@ -31,8 +31,9 @@
 #define MAX_STEP 100000
 #define MIN_STEP 1
 #define BAUT 9600
-#define TX_PIN 18
-#define RX_PIN 19
+#define TX_PIN 10
+#define RX_PIN 11
+#define RECEIVERBUFFER 256
 
 enum Direction : byte
 {
@@ -46,7 +47,7 @@ typedef struct Command {
 	unsigned int Speed;
 	char Direction;
 	unsigned int NumberOfSteps;
-	bool Delivered;
+	bool Delivered; // Beschreibt, ob der Motor bereits den aktuelle Befehl übernommen hat
 } Command;
 
 enum MessageResponse
@@ -62,8 +63,8 @@ enum MessageResponse
 class CommandTransceiverClass
 {
 private:
-	SoftwareSerial* BlueSerial; // RX, TX
-	char input[256 + 1];
+	SoftwareSerial BlueSerial; // RX, TX
+	char input[RECEIVERBUFFER + 1];
 	unsigned char runDevice;
 	// Booleanwerte fuer Rueckmeldung
 	boolean commandOk;
@@ -78,12 +79,16 @@ private:
 	Command commandList[COMMAND_LENGTH];
 
 	void reset();
-	void methodRUN(char* method, char* line, char* save1, char* save2);
+	void interpretMethodRun(char* method, char* line, char* save1, char* save2);
+	void interpretParameterSpeed(char* parameterValues, char* parameterSave);
+	void interpretParameterNumSteps(char* parameterValues, char* parameterSave);
+	void interpretParameterDirection(char* parameterValues, char* parameterSave);
 	void sendBack();
 	void setCode(unsigned int code, String msg);
 
 	
  public:
+	 CommandTransceiverClass() : BlueSerial(RX_PIN, TX_PIN) {}
 	void init();
 	void update();
 	Command* getCommand(byte motorId);

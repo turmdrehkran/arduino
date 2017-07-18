@@ -6,18 +6,20 @@
 
 void CommandTransceiverClass::init()
 {
+	Serial1.begin(9600);
 	Serial.begin(9600);
-	BlueSerial.begin(9600);
 }
 
 void CommandTransceiverClass::update()
 {
-	byte size = BlueSerial.readBytes(input, RECEIVERBUFFER);
+	Serial1.flush();
+	byte size = Serial1.readBytes(input, RECEIVERBUFFER);
+
 	if (size > 0) {
-		Serial.println("EMPFANGE:");
+		Serial1.println("EMPFANGE:");
 		reset();
 		input[size] = 0;
-		
+		Serial.println(input);
 		char* save1;
 		char* line = strtok_r(input, INPUT_DELIMITER, &save1);
 
@@ -34,7 +36,8 @@ void CommandTransceiverClass::update()
 			interpretMethodRun(method, line, save1, save2);
 		}
 		else {
-			Serial.println("Fehler: Methode existiert nicht! => " + (String)method);
+			Serial1.println("Fehler: Methode existiert nicht! => " + (String)method);
+			Serial1.flush();
 			return;
 		}
 	}
@@ -42,7 +45,8 @@ void CommandTransceiverClass::update()
 
 void CommandTransceiverClass::reset()
 {
-	for (byte i = 0; i < COMMAND_LENGTH; ++i) {
+	for (byte i = 0; i < COMMAND_LENGTH; ++i) 
+	{
 		commandList[i].MotorID = i;
 		commandList[i].Direction = 'N';
 		commandList[i].Speed = 0;
@@ -76,14 +80,12 @@ void CommandTransceiverClass::interpretMethodRun(char* methodArgs, char* methodB
 				}
 			}
 			else {
-				Serial.println("Fail: doppelte Besetzung der Motoren");
+				Serial1.println("Fail: doppelte Besetzung der Motoren");
 				errorMSG = "Fail: doppelte Besetzung der Motoren";
 				syntaxError = true;
 				argsSave = 0;
 				methodArgs = 0;
-
 			}
-
 		}
 		else if (strcmp(methodArgs, "1") == 0) {
 			allDevice = (allDevice << 1) | 1;
@@ -102,7 +104,7 @@ void CommandTransceiverClass::interpretMethodRun(char* methodArgs, char* methodB
 				}
 			}
 			else {
-				Serial.println("Fail: doppelte Besetzung der Motoren");
+				Serial1.println("Fail: doppelte Besetzung der Motoren");
 				errorMSG = "Fail: doppelte Besetzung der Motoren";
 				syntaxError = true;
 				argsSave = 0;
@@ -127,7 +129,7 @@ void CommandTransceiverClass::interpretMethodRun(char* methodArgs, char* methodB
 				}
 			}
 			else {
-				Serial.println("Fail: doppelte Besetzung der Motoren");
+				Serial1.println("Fail: doppelte Besetzung der Motoren");
 				errorMSG = "Fail: doppelte Besetzung der Motoren";
 				syntaxError = true;
 				argsSave = 0;
@@ -136,11 +138,13 @@ void CommandTransceiverClass::interpretMethodRun(char* methodArgs, char* methodB
 
 		}
 		else {
-			Serial.println("Fail: ID existiet nicht => " + (String)methodArgs);
+			Serial1.println("Fail: ID existiet nicht => " + (String)methodArgs);
 			errorMSG = "Fail: ID existiet nicht => " + (String)methodArgs;
 			semanticError = true;
 		}
 	}
+
+
 	methodBody = strtok_r(NULL, INPUT_DELIMITER, &bodySave);
 	// parameter bearbeiten
 	char* paramterSave;
@@ -167,10 +171,10 @@ void CommandTransceiverClass::interpretMethodRun(char* methodArgs, char* methodB
 						commandList[2].Direction = *value;
 					}
 					else if (value == 0) {
-						Serial.println("Direction");
+						Serial1.println("Direction");
 					}
 					else {
-						Serial.println("Fehler: zu viele Werte");
+						Serial1.println("Fehler: zu viele Werte");
 						errorMSG = "Fail: zu viele Werte";
 						syntaxError = true;
 						value = 0;
@@ -178,7 +182,7 @@ void CommandTransceiverClass::interpretMethodRun(char* methodArgs, char* methodB
 					}
 				}
 				else {
-					Serial.println("Fehler: falsche Werte in Direction");
+					Serial1.println("Fehler: falsche Werte in Direction");
 					errorMSG = "Fail: falsche Werte in Direction";
 					syntaxError = true;
 					value = 0;
@@ -204,10 +208,10 @@ void CommandTransceiverClass::interpretMethodRun(char* methodArgs, char* methodB
 						commandList[2].Speed = atoi(value);
 					}
 					else if (value == 0) {
-						Serial.println("Speed");
+						Serial1.println("Speed");
 					}
 					else {
-						Serial.println("Fehler: zu viele Werte");
+						Serial1.println("Fehler: zu viele Werte");
 						errorMSG = "Fail: zu viele Werte";
 						syntaxError = true;
 						value = 0;
@@ -215,7 +219,7 @@ void CommandTransceiverClass::interpretMethodRun(char* methodArgs, char* methodB
 					}
 				}
 				else {
-					Serial.println("Fehler: falsche Werte in Speed");
+					Serial1.println("Fehler: falsche Werte in Speed");
 					errorMSG = "Fail: falsche Werte in Speed";
 					syntaxError = true;
 					value = 0;
@@ -240,10 +244,10 @@ void CommandTransceiverClass::interpretMethodRun(char* methodArgs, char* methodB
 						commandList[2].NumberOfSteps = atoi(value);
 					}
 					else if (value == 0) {
-						Serial.println("NumSteps");
+						Serial1.println("NumSteps");
 					}
 					else {
-						Serial.println("Fehler: zu viele Werte");
+						Serial1.println("Fehler: zu viele Werte");
 						errorMSG = "Fail: zu viele Werte";
 						syntaxError = true;
 						value = 0;
@@ -251,7 +255,7 @@ void CommandTransceiverClass::interpretMethodRun(char* methodArgs, char* methodB
 					}
 				}
 				else {
-					Serial.println("Fehler: falsche Werte in NumSteps");
+					Serial1.println("Fehler: falsche Werte in NumSteps");
 					errorMSG = "Fail: falsche Werte in NumSteps";
 					syntaxError = true;
 					value = 0;
@@ -260,18 +264,18 @@ void CommandTransceiverClass::interpretMethodRun(char* methodArgs, char* methodB
 			}
 		}
 		else {
-			Serial.println("Fehler: Key existiert nicht!");
+			Serial1.println("Fehler: Key existiert nicht!");
 			errorMSG = "Fail: Key existiert nicht!";
 			syntaxError = true;
 		}
 		if (checkAllDevice != allDevice) {
-			Serial.println("Fehler: Falsche Angaben");
+			Serial1.println("Fehler: Falsche Angaben");
 			commandOk = false;
 			methodBody = 0;
 		}
 		else {
-			Serial.println("Variablen okay");
-			Serial.println("");
+			Serial1.println("Variablen okay");
+			Serial1.println("");
 			methodBody = strtok_r(0, INPUT_DELIMITER, &bodySave);
 			commandOk = true;
 			syntaxError = false;
@@ -288,35 +292,24 @@ void CommandTransceiverClass::sendBack()
 		Serial.println("Send ok:");
 		while (checkAllDevice > B(00000000)) {
 			checkAllDevice = (checkAllDevice >> 1) | 0;
-			Serial.println("100 OPERATING Motor: " + (String)commandList[i].MotorID + "\n");
-			BlueSerial.println("100 OPERATING Motor: " + (String)commandList[i].MotorID + "\n"); // BlueSerial
+			Serial1.println("100 OPERATING Motor: " + (String)commandList[i].MotorID + "\n");
 			i++;
 		}
 	}
 	else if (done) {
-		Serial.println("send Finish:");
-		Serial.println("200 DONE \n");
-		BlueSerial.println("200 DONE \n"); // BlueSerial
+		Serial1.println("200 DONE \n");
 	}
 	else if (syntaxError && !semanticError && !outOfBoundsError) {
-		Serial.println("Send Fail:");
-		Serial.println("400 SYNTAX " + errorMSG + "\n");
-		BlueSerial.println("400 SYNTAX " + errorMSG + "\n"); // BlueSerial
+		Serial1.println("400 SYNTAX " + errorMSG + "\n");
 	}
 	else if (!syntaxError && semanticError && !outOfBoundsError) {
-		Serial.println("Send Fail:");
-		Serial.println("410 SEMNATIC " + errorMSG + "\n");
-		Serial.println("410 SEMNATIC " + errorMSG + "\n"); // BlueSerial
+		Serial1.println("410 SEMNATIC " + errorMSG + "\n");
 	}
 	else if (!syntaxError && !semanticError && outOfBoundsError) {
-		Serial.println("Send Fail:");
-		Serial.println("550 OUTOFBOUNDS " + errorMSG + "\n");
-		BlueSerial.println("550 SEMNATIC " + errorMSG + "\n"); // BlueSerial
+		Serial1.println("550 OUTOFBOUNDS " + errorMSG + "\n");
 	}
 	else {
-		Serial.println("Send Fail:");
-		Serial.println("unbekannt " + errorMSG + "\n");
-		BlueSerial.println("unbekannt " + errorMSG + "\n"); //BlueSerial
+		Serial1.println("unbekannt " + errorMSG + "\n");
 	}
 }
 
@@ -371,7 +364,7 @@ void CommandTransceiverClass::send(MessageResponse type, byte motorId)
 	if (message.length() > 0)
 	{
 		message += motorId;
-		Serial.println(message);
+		Serial1.println(message);
 	}
 }
 

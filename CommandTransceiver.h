@@ -31,8 +31,8 @@
 #define MAX_STEP 100000
 #define MIN_STEP 1
 #define BAUT 9600
-#define TX_PIN 10
-#define RX_PIN 11
+#define TX_PIN 7
+#define RX_PIN 8
 #define RECEIVERBUFFER 256
 
 enum Direction : byte

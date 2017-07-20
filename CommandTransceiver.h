@@ -9,31 +9,12 @@
 	#include "WProgram.h"
 #endif
 
-#include <SoftwareSerial.h>
-
-
-#define B(x) ( \
-  0##x >>  0 & 0001 | \
-  0##x >>  2 & 0002 | \
-  0##x >>  4 & 0004 | \
-  0##x >>  6 & 0010 | \
-  0##x >>  8 & 0020 | \
-  0##x >> 10 & 0040 | \
-  0##x >> 12 & 0100 | \
-  0##x >> 14 & 0200 )
-
+#define INPUT_LENGTH 256
 #define COMMAND_LENGTH 3
 #define INPUT_DELIMITER "\n"
 #define METHOD_DELIMITER " "
 #define PARAMETER_DELIMITER ":"
-#define MAX_SPEED 9999
-#define MIN_SPEED 1
-#define MAX_STEP 100000
-#define MIN_STEP 1
-#define BAUT 9600
-#define TX_PIN 7
-#define RX_PIN 8
-#define RECEIVERBUFFER 256
+#define VALUE_DELIMITER " "
 
 enum Direction : byte
 {
@@ -45,9 +26,10 @@ enum Direction : byte
 typedef struct Command {
 	byte MotorID;
 	unsigned int Speed;
-	char Direction;
-	unsigned int NumberOfSteps;
-	bool Delivered; // Beschreibt, ob der Motor bereits den aktuelle Befehl übernommen hat
+	Direction Direction;
+	unsigned NumberOfSteps;
+	bool HoldingTorgue;
+	bool Delivered;
 } Command;
 
 enum MessageResponse
@@ -63,36 +45,23 @@ enum MessageResponse
 class CommandTransceiverClass
 {
 private:
-	SoftwareSerial BlueSerial; // RX, TX
-	char input[RECEIVERBUFFER + 1];
-	unsigned char runDevice;
-	// Booleanwerte fuer Rueckmeldung
-	boolean commandOk;
-	boolean syntaxError;
-	boolean semanticError;
-	boolean outOfBoundsError;
-	boolean done;
-	// Error Nachricht
-	String errorMSG;
-	byte checkAllDevice;
-
+	bool isActive;
+	char input[INPUT_LENGTH + 1];
 	Command commandList[COMMAND_LENGTH];
 
 	void reset();
-	void interpretMethodRun(char* method, char* line, char* save1, char* save2);
-	void interpretParameterSpeed(char* parameterValues, char* parameterSave);
-	void interpretParameterNumSteps(char* parameterValues, char* parameterSave);
-	void interpretParameterDirection(char* parameterValues, char* parameterSave);
-	void sendBack();
-	void setCode(unsigned int code, String msg);
+	void interpretMethod_Run(char* methodArgs, char* methodParameters);
+	void interpretParameter_Speed(byte* IDs, char* values, byte numberOfCommands);
+	void interpretParameter_Direction(byte* IDs, char* values, byte numberOfCommands);
+	void interpretParameter_HoldingTorgue(byte* IDs, char* values, byte numberOfCommands);
+	void interpretParameter_NumberOfSteps(byte* IDs, char* values, byte numberOfCommands);
 
-	
  public:
-	 CommandTransceiverClass() : BlueSerial(RX_PIN, TX_PIN) {}
 	void init();
 	void update();
-	Command* getCommand(byte motorId);
 	bool isAvailable();
+	Command* getCommand(byte motorId);
+
 	void send(MessageResponse type, byte motorId);
 };
 

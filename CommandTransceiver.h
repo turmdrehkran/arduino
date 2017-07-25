@@ -10,25 +10,24 @@
 #endif
 
 #define INPUT_LENGTH 256
-#define COMMAND_LENGTH 3
-#define INPUT_DELIMITER "\n"
-#define METHOD_DELIMITER " "
+#define MAX_COMMAND_ID 3
+#define MEHTOD_LINE_DELIMITER "\n"
+#define METHOD_ARGS_DELIMITER " "
 #define PARAMETER_DELIMITER ":"
 #define VALUE_DELIMITER " "
 
-enum Direction : byte
-{
-	Undefined = 0xFF,
-	Left = 0x00,
-	Right = 0x01 // TODO entsprechend LOW/HIGH und der motorenrichtung
-};
+#define SPEED_MIN_HZ 0
+#define SPEED_MAX_HZ 1000
+#define NUM_STEPS_MIN 1
+#define NUM_STEPS_MAX INT_MAX // TODO schauen, obs knallt
+#define DIRECTION_LEFT 'L'
+#define DIRECTION_RIGHT 'R'
 
 typedef struct Command {
 	byte MotorID;
 	unsigned int Speed;
-	Direction Direction;
-	unsigned NumberOfSteps;
-	bool HoldingTorgue;
+	char Direction;
+	unsigned NumSteps;
 	bool Delivered;
 } Command;
 
@@ -47,7 +46,7 @@ class CommandTransceiverClass
 private:
 	bool isActive;
 	char input[INPUT_LENGTH + 1];
-	Command commandList[COMMAND_LENGTH];
+	Command commandList[MAX_COMMAND_ID];
 
 	void reset();
 	void interpretMethod_Run(char* methodArgs, char* methodParameters);

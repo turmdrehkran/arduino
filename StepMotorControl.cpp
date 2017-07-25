@@ -157,7 +157,7 @@ void StepMotorControl::automatic_idle_update(byte input)
 	{
 		command->Delivered = true;
 		interval = command->Speed;
-		currentSteps = command->NumberOfSteps;
+		currentSteps = command->NumSteps;
 
 		if (command->Direction == 'L') 
 		{

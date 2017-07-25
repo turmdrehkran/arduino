@@ -8,15 +8,14 @@ void CommandTransceiverClass::init()
 {
 	Serial.begin(9600);
 
-	for (byte i = 0; i < COMMAND_LENGTH; ++i)
+	for (byte i = 0; i < MAX_COMMAND_ID; ++i)
 	{
 		Command& cmd = commandList[i];
 
 		cmd.MotorID = i;
-		cmd.HoldingTorgue = false;
-		cmd.Direction = Direction::Undefined;
+		cmd.Direction = '\0';
 		cmd.Delivered = false;
-		cmd.NumberOfSteps = 0;
+		cmd.NumSteps = 0;
 		cmd.Speed = 0;
 	}
 }
@@ -29,23 +28,23 @@ void CommandTransceiverClass::update()
 
 		Serial.println(F("EMPFANGE:"));
 
-		byte size = Serial.readBytes(input, 256);
+		byte size = Serial.readBytes(input, INPUT_LENGTH);
 		input[size] = 0;
 		Serial.println(input);
 
 		char* methodParameters;
-		char* line = strtok_r(input, INPUT_DELIMITER, &methodParameters);
+		char* line = strtok_r(input, MEHTOD_LINE_DELIMITER, &methodParameters);
 
 		// methode bearbeiten
 		char* methodArgs;
-		char* method = strtok_r(input, METHOD_DELIMITER, &methodArgs);
+		char* method = strtok_r(input, METHOD_ARGS_DELIMITER, &methodArgs);
 
 		if (strcasecmp(method, "RUN") == 0)
 		{
 			Serial.println(F("101 PARSING"));
 			interpretMethod_Run(methodArgs, methodParameters);
 
-			for (byte i = 0; i < COMMAND_LENGTH; i++)
+			for (byte i = 0; i < MAX_COMMAND_ID; i++)
 			{
 				Serial.println(commandList[i].MotorID);
 				Serial.println(commandList[i].Speed);
@@ -67,10 +66,12 @@ void CommandTransceiverClass::update()
 
 void CommandTransceiverClass::reset()
 {
-	for (byte i = 0; i < COMMAND_LENGTH; ++i)
+	for (byte i = 0; i < MAX_COMMAND_ID; ++i)
 	{
 		commandList[i].Delivered = false;
 		commandList[i].Speed = 0;
+		commandList[i].Direction = '\0';
+		commandList[i].NumSteps = 0;
 	}
 }
 
@@ -78,18 +79,13 @@ void CommandTransceiverClass::interpretMethod_Run(char * methodArgs, char * meth
 {
 	char* save;
 	byte numberOfCommands = 0; // muss kleinergleich COMMAND_LENGTH sein
-	byte IDs[COMMAND_LENGTH];
+	byte IDs[MAX_COMMAND_ID];
 
-	char* args = strtok_r(methodArgs, METHOD_DELIMITER, &save);
+	char* args = strtok_r(methodArgs, METHOD_ARGS_DELIMITER, &save);
 	while (methodArgs != 0)
 	{
-		int id = atoi(methodArgs); // TODO errno auslesen und dadurch Syntax-Fehler werfen
-		if (id < 0 || id >= COMMAND_LENGTH)
-		{
-			Serial.println(F("500 SEMANTIC")); // ID out of range
-			return; // Auslesen abbrechen
-		}
-		else
+		int id = atoi(methodArgs); // TODO gegen strtol austauschen aufgrund fehleranfälligkeit
+		if (id >= 0 && id < MAX_COMMAND_ID) 
 		{
 			IDs[numberOfCommands] = id;
 			Serial.println(id);
@@ -104,12 +100,18 @@ void CommandTransceiverClass::interpretMethod_Run(char * methodArgs, char * meth
 				}
 			}
 		}
+		else 
+		{
+			Serial.println(F("500 SEMANTIC")); // ID out of range
+			return; // Auslesen abbrechen
+		}
 
-		methodArgs = strtok_r(NULL, METHOD_DELIMITER, &save);
+		methodArgs = strtok_r(NULL, METHOD_ARGS_DELIMITER, &save);
 	}
 
+	Serial.println("jetzt kommen die parameter!");
 	save = NULL;
-	char* keyValues = strtok_r(methodParameters, INPUT_DELIMITER, &save);
+	char* keyValues = strtok_r(methodParameters, MEHTOD_LINE_DELIMITER, &save);
 
 	// parameter bearbeiten
 	char* keyValuesSave;
@@ -126,12 +128,13 @@ void CommandTransceiverClass::interpretMethod_Run(char * methodArgs, char * meth
 
 		}
 
-		keyValues = strtok_r(NULL, INPUT_DELIMITER, &save);
+		keyValues = strtok_r(NULL, MEHTOD_LINE_DELIMITER, &save);
 	}
 }
 
 void CommandTransceiverClass::interpretParameter_Speed(byte * IDs, char * values, byte numberOfCommands)
 {
+
 }
 
 void CommandTransceiverClass::interpretParameter_Direction(byte * IDs, char * values, byte numberOfCommands)

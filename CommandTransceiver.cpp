@@ -110,18 +110,16 @@ void CommandTransceiverClass::interpretMethod_Run(char * methodArgs, char * meth
 		methodArgs = strtok_r(NULL, METHOD_ARGS_DELIMITER, &save);
 	}
 
-	Serial.println("jetzt kommen die parameter!");
 	save = NULL;
 	char* keyValues = strtok_r(methodParameters, METHOD_LINE_DELIMITER, &save);
 
-	// parameter bearbeiten
 	char* keyValuesSave;
 	char* key;
 	while (keyValues != 0)
 	{
 		key = strtok_r(keyValues, PARAMETER_DELIMITER, &keyValuesSave);
 
-		if (strcasecmp(key, "Speed") == 0)
+		if (strcasecmp_PF(key, F("Speed")) == 0)
 		{
 			if (!interpretParameter_Speed(keyValuesSave, numberOfCommands)) 
 			{
@@ -129,12 +127,12 @@ void CommandTransceiverClass::interpretMethod_Run(char * methodArgs, char * meth
 				keyValues = 0;
 			}
 		}
-		else if (strcasecmp(key, "NumSteps") == 0)
+		else if (strcasecmp_PF(key, F("NumSteps")) == 0)
 		{
 			interpretParameter_NumberOfSteps(keyValuesSave, numberOfCommands);
 
 		} 
-		else if (strcasecmp(key, "Direction") == 0) //TODO Bug: Es wird nicht in diesen Fall gesprungen!
+		else if (strcasecmp_PF(key, F("Direction")) == 0) //TODO Bug: Es wird nicht in diesen Fall gesprungen!
 		{
 			interpretParameter_Direction(keyValuesSave, numberOfCommands);
 		}

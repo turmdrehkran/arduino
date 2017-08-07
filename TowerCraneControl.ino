@@ -42,9 +42,9 @@ void setup()
 void loop()
 {
 	CommandTransceiver.update();
-	//updateWinch();
-	//updateTrolley();
-	//updateRotator();
+	updateWinch();
+	updateTrolley();
+	updateRotator();
 }
 
 void updateWinch() 

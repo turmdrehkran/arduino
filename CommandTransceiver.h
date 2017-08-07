@@ -44,7 +44,8 @@ enum MessageResponse
 class CommandTransceiverClass
 {
 private:
-	bool isActive;
+	byte finished;
+	bool hasData;
 	char input[INPUT_LENGTH + 1];
 	Command commandList[MAX_COMMAND_ID];
 
@@ -60,6 +61,7 @@ private:
 	void update();
 	bool isAvailable();
 	Command* getCommand(byte motorId);
+	void setFinished(byte motorId);
 
 	void send(MessageResponse type, byte motorId);
 };

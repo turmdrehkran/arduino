@@ -7,7 +7,8 @@
 void CommandTransceiverClass::init()
 {
 	Serial.begin(9600);
-
+	memset(input, 0, INPUT_LENGTH);
+	finished = 0;
 	for (byte i = 0; i < MAX_COMMAND_ID; ++i)
 	{
 		Command& cmd = commandList[i];
@@ -22,14 +23,26 @@ void CommandTransceiverClass::init()
 
 void CommandTransceiverClass::update()
 {
-	if (Serial.available()) 
+	if (Serial.available() && finished == 0) 
 	{
 		reset();
 
 		Serial.println(F("EMPFANGE:"));
-
-		byte size = Serial.readBytes(input, INPUT_LENGTH);
+		// bool ok = Serial.findUntil(input, "\n\n"); funktioniert nicht!
+		byte size = Serial.readBytes(input, INPUT_LENGTH); // TODO read until \n\n -> lesen bis \n\n, dann erst Command bearbeiten
 		input[size] = 0;
+
+		for (int i = 1; i < size; i++) 
+		{
+			if (input[i - 1] == input[i] && input[i] == '\n')
+			{
+				Serial.println("Problem solved!");
+				input[i] = 0;
+				size = i;
+				break;
+			}
+		}
+
 		Serial.println(input);
 
 		char* methodParameters;
@@ -44,7 +57,11 @@ void CommandTransceiverClass::update()
 			Serial.println(F("101 PARSING"));
 			interpretMethod_Run(methodArgs, methodParameters);
 
-			for (byte i = 0; i < MAX_COMMAND_ID; i++)
+			// Command erfolgreich erhalten und alles ok!
+			hasData = true;
+			memset(input, 0, INPUT_LENGTH);
+
+			/*for (byte i = 0; i < MAX_COMMAND_ID; i++)
 			{
 				Serial.println(commandList[i].MotorID);
 				Serial.println(commandList[i].Speed_ms);
@@ -52,7 +69,7 @@ void CommandTransceiverClass::update()
 				Serial.println(commandList[i].Direction);
 
 				Serial.println();
-			}
+			}*/
 		}
 		else if (strcasecmp(method, "SHIT") == 0)
 		{
@@ -100,6 +117,7 @@ void CommandTransceiverClass::interpretMethod_Run(char * methodArgs, char * meth
 					return;
 				}
 			}
+			finished = numberOfCommands;
 		}
 		else 
 		{
@@ -132,7 +150,7 @@ void CommandTransceiverClass::interpretMethod_Run(char * methodArgs, char * meth
 			interpretParameter_NumberOfSteps(keyValuesSave, numberOfCommands);
 
 		} 
-		else if (strcasecmp_PF(key, F("Direction")) == 0) //TODO Bug: Es wird nicht in diesen Fall gesprungen!
+		else if (strcasecmp_PF(key, F("Direction")) == 0) 
 		{
 			interpretParameter_Direction(keyValuesSave, numberOfCommands);
 		}
@@ -141,6 +159,7 @@ void CommandTransceiverClass::interpretMethod_Run(char * methodArgs, char * meth
 			Serial.print("Key=");
 			Serial.println(key);
 			send(MessageResponse::Syntax, 123);
+			keyValues = 0;
 		}
 
 		keyValues = strtok_r(NULL, METHOD_LINE_DELIMITER, &save);
@@ -263,7 +282,31 @@ bool CommandTransceiverClass::interpretParameter_NumberOfSteps(char * values, by
 
 bool CommandTransceiverClass::isAvailable()
 {
-	return Serial.available();
+	return hasData;
+}
+
+Command * CommandTransceiverClass::getCommand(byte motorId)
+{
+	for (byte i = 0; i < MAX_COMMAND_ID; i++) 
+	{
+		if (commandList[i].MotorID == motorId && commandList[i].Direction != 'N' && !commandList[i].Delivered) 
+		{
+			commandList[i].Delivered = true;
+			return &commandList[i];
+		}
+	}
+
+	return nullptr;
+}
+
+void CommandTransceiverClass::setFinished(byte motorId)
+{
+	finished--;
+	if (finished == 0) 
+	{
+		send(MessageResponse::Done, 0xFF);
+		hasData = false;
+	}
 }
 
 void CommandTransceiverClass::send(MessageResponse type, byte motorId)

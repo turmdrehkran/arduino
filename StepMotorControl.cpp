@@ -21,7 +21,7 @@ void StepMotorControl::update(byte input) // TODO in Update-Methode die Eingabe 
 	if ((lastExecutionTime + interval) < millis())
 	{
 		lastExecutionTime = millis();
-
+		
 		switch (currentState)
 		{
 		case StepMotorStates::IDLE:
@@ -76,7 +76,13 @@ void StepMotorControl::idle_update(byte input)
 	}
 
 	// left, right, lbLeft, lbRight, Serial, reserved,  reserved,  reserved
-	if (input == B10000000 || input == B10010000) // LEFT 10000 || 10010
+	if (CommandTransceiver.isAvailable()) // AUTOMATIC 00xx1
+										  // TODO StateMachine erweitern mit Automatic_Left und Automatic_Right. Automatic ist A_IDLE. 
+	{
+		lastState = currentState;
+		currentState = StepMotorStates::AUTOMATIC_IDLE;
+	}
+	else if (input == B10000000 || input == B10010000) // LEFT 10000 || 10010
 	{
 		lastState = currentState;
 		currentState = StepMotorStates::LEFT;
@@ -86,19 +92,12 @@ void StepMotorControl::idle_update(byte input)
 		lastState = currentState;
 		currentState = StepMotorStates::RIGHT;
 	}
-	else if (CommandTransceiver.isAvailable()) // AUTOMATIC 00xx1
-											   // TODO StateMachine erweitern mit Automatic_Left und Automatic_Right. Automatic ist A_IDLE. 
-	{
-		lastState = currentState;
-		currentState = StepMotorStates::AUTOMATIC_IDLE;
-	}
 	else
 	{
 		// stay in IDLE
 		lastState = currentState;
 		currentState = StepMotorStates::IDLE;
 	}
-
 
 	if (currentState != lastState)
 	{
@@ -153,9 +152,8 @@ void StepMotorControl::automatic_idle_update(byte input)
 	// do it!
 	Command* command = CommandTransceiver.getCommand(identifier);
 
-	if (command != nullptr && !command->Delivered) 
+	if (command != nullptr) 
 	{
-		command->Delivered = true;
 		interval = command->Speed_ms;
 		currentSteps = command->NumSteps;
 
@@ -188,12 +186,15 @@ void StepMotorControl::automatic_left_update(byte input)
 		digitalWrite(directionPin, LOW);
 	}
 
+	//Serial.println("Step L");
+
 	step();
 	currentSteps--;
 
 	// TODO neuer Befehl unterbricht aktuellen
 	if (currentSteps <= 0 || (input & B00100000) == B00100000)  // 0xxxx || xx1xx
 	{
+		CommandTransceiver.setFinished(this->identifier);
 		// exit action
 		lastState = currentState;
 		currentState = StepMotorStates::AUTOMATIC_IDLE;
@@ -211,8 +212,9 @@ void StepMotorControl::automatic_right_update(byte input)
 	currentSteps--;
 
 	// left, right, lbLeft, lbRight, Serial
-	if (currentSteps <= 0 || (input & B00010000) == B00010000) // x0xxx || xxx1x
+	if (currentSteps < 0 || (input & B00010000) == B00010000) // x0xxx || xxx1x
 	{
+		CommandTransceiver.setFinished(this->identifier);
 		// exit action
 		lastState = currentState;
 		currentState = StepMotorStates::AUTOMATIC_IDLE;

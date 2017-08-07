@@ -30,8 +30,6 @@ private:
 	void update_LightBarriers();
 	void update_SerialInterface();
 
-
-
 public:
 	void init();
 	void initButtons(byte buttons[MAX_NUMBER_OF_BUTTONS], byte buttonPinsSize);

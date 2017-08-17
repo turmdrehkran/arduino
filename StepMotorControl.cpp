@@ -186,16 +186,28 @@ void StepMotorControl::automatic_left_update(byte input)
 		digitalWrite(directionPin, LOW);
 	}
 
-	//Serial.println("Step L");
-
 	step();
 	currentSteps--;
 
-	// TODO neuer Befehl unterbricht aktuellen
-	if (currentSteps <= 0 || (input & B00100000) == B00100000)  // 0xxxx || xx1xx
+	// EXIT ACTIONS
+	if (currentSteps <= 0) // finished
 	{
 		CommandTransceiver.setFinished(this->identifier);
-		// exit action
+
+		lastState = currentState;
+		currentState = StepMotorStates::AUTOMATIC_IDLE;
+	}
+	else if ((input & B00100000) == B00100000) // outofbound
+	{
+		CommandTransceiver.setError(this->identifier);
+
+		lastState = currentState;
+		currentState = StepMotorStates::AUTOMATIC_IDLE;
+	}
+	else if (CommandTransceiver.hasError()) // outofbound of other motor
+	{
+		currentSteps = 0;
+
 		lastState = currentState;
 		currentState = StepMotorStates::AUTOMATIC_IDLE;
 	}
@@ -211,11 +223,25 @@ void StepMotorControl::automatic_right_update(byte input)
 	step();
 	currentSteps--;
 
-	// left, right, lbLeft, lbRight, Serial
-	if (currentSteps < 0 || (input & B00010000) == B00010000) // x0xxx || xxx1x
+	// EXIT ACTIONS
+	if (currentSteps <= 0) // finished
 	{
 		CommandTransceiver.setFinished(this->identifier);
-		// exit action
+
+		lastState = currentState;
+		currentState = StepMotorStates::AUTOMATIC_IDLE;
+	}
+	else if ((input & B00010000) == B00010000) // outofbound
+	{
+		CommandTransceiver.setError(this->identifier);
+
+		lastState = currentState;
+		currentState = StepMotorStates::AUTOMATIC_IDLE;
+	}
+	else if (CommandTransceiver.hasError()) // outofbound of other motor
+	{
+		currentSteps = 0;
+
 		lastState = currentState;
 		currentState = StepMotorStates::AUTOMATIC_IDLE;
 	}

@@ -45,6 +45,7 @@ class CommandTransceiverClass
 {
 private:
 	byte finished;
+	bool error;
 	bool hasData;
 	char input[INPUT_LENGTH + 1];
 	Command commandList[MAX_COMMAND_ID];
@@ -62,6 +63,8 @@ private:
 	bool isAvailable();
 	Command* getCommand(byte motorId);
 	void setFinished(byte motorId);
+	void setError(byte motorId);
+	bool hasError();
 
 	void send(MessageResponse type, byte motorId);
 };

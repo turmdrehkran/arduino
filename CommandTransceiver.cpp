@@ -27,7 +27,6 @@ void CommandTransceiverClass::update()
 	{
 		reset();
 
-		Serial.println(F("EMPFANGE:"));
 		// bool ok = Serial.findUntil(input, "\n\n"); funktioniert nicht!
 		byte size = Serial.readBytes(input, INPUT_LENGTH); // TODO read until \n\n -> lesen bis \n\n, dann erst Command bearbeiten
 		input[size] = 0;
@@ -36,14 +35,14 @@ void CommandTransceiverClass::update()
 		{
 			if (input[i - 1] == input[i] && input[i] == '\n')
 			{
-				Serial.println("Problem solved!");
+				//Serial.println("Problem solved!");
 				input[i] = 0;
 				size = i;
 				break;
 			}
 		}
 
-		Serial.println(input);
+		//Serial.println(input);
 
 		char* methodParameters;
 		char* line = strtok_r(input, METHOD_LINE_DELIMITER, &methodParameters);
@@ -59,6 +58,7 @@ void CommandTransceiverClass::update()
 
 			// Command erfolgreich erhalten und alles ok!
 			hasData = true;
+			error = false;
 			memset(input, 0, INPUT_LENGTH);
 
 			/*for (byte i = 0; i < MAX_COMMAND_ID; i++)
@@ -156,8 +156,8 @@ void CommandTransceiverClass::interpretMethod_Run(char * methodArgs, char * meth
 		}
 		else 
 		{
-			Serial.print("Key=");
-			Serial.println(key);
+			//Serial.print("Key=");
+			//Serial.println(key);
 			send(MessageResponse::Syntax, 123);
 			keyValues = 0;
 		}
@@ -215,8 +215,8 @@ bool CommandTransceiverClass::interpretParameter_Direction(char * values, byte n
 		if (i < numberOfCommands)
 		{
 			int direction = value[0];
-			Serial.print("dir=");
-			Serial.println(direction);
+			//Serial.print("dir=");
+			//Serial.println(direction);
 			if (direction == DIRECTION_LEFT || direction == DIRECTION_RIGHT) 
 			{
 				commandList[i].Direction = direction;
@@ -309,6 +309,20 @@ void CommandTransceiverClass::setFinished(byte motorId)
 	}
 }
 
+void CommandTransceiverClass::setError(byte motorId)
+{
+	finished = 0;
+	hasData = false;
+
+	error = true;
+	send(MessageResponse::OutOfBound, motorId);
+}
+
+bool CommandTransceiverClass::hasError()
+{
+	return error;
+}
+
 void CommandTransceiverClass::send(MessageResponse type, byte motorId)
 {
 	String message;
@@ -318,26 +332,28 @@ void CommandTransceiverClass::send(MessageResponse type, byte motorId)
 
 	if (type == MessageResponse::Operating)
 	{
-		message += F(" Operating ");
+		message += F(" OPERATING \nMotor: ");
+		message += motorId;
 	}
 	else if (type == MessageResponse::Done)
 	{
-		message += F(" Done ");
+		message += F(" OK");
 	}
 	else if (type == MessageResponse::Semantic)
 	{
-		message += F(" Semantic ");
+		message += F(" SEMANTIC");
 	}
 	else if (type == MessageResponse::Syntax)
 	{
-		message += F(" Syntax ");
+		message += F(" SYNTAX");
+	}
+	else if (type == MessageResponse::OutOfBound)
+	{
+		message += F(" OUTOFBOUND ERROR\nMotor: ");
+		message += motorId;
 	}
 
-	if (message.length() > 0) 
-	{
-		message += motorId;
-		Serial.println(message);
-	}
+	Serial.println(message);
 }
 
 CommandTransceiverClass CommandTransceiver;

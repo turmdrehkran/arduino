@@ -27,14 +27,16 @@ typedef struct Command {
 	byte MotorID;
 	unsigned int Speed_ms;
 	char Direction;
-	unsigned NumSteps;
+	unsigned int NumSteps;
 	bool Delivered;
 } Command;
 
 enum MessageResponse
 {
 	Operating = 100,
-	Done = 200,
+	CalOperating = 110,
+	OK = 200,
+	CalOK = 210,
 	Syntax = 400,
 	Semantic = 410,
 	OutOfBound = 550
@@ -46,6 +48,7 @@ class CommandTransceiverClass
 private:
 	byte finished;
 	bool error;
+	bool inCalibration;
 	bool hasData;
 	char input[INPUT_LENGTH + 1];
 	Command commandList[MAX_COMMAND_ID];
@@ -65,6 +68,7 @@ private:
 	void setFinished(byte motorId);
 	void setError(byte motorId);
 	bool hasError();
+	bool isCalibrating();
 
 	void send(MessageResponse type, byte motorId);
 };

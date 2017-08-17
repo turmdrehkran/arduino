@@ -6,7 +6,7 @@
 
 void CommandTransceiverClass::init()
 {
-	Serial.begin(9600);
+	Serial1.begin(9600);
 	memset(input, 0, INPUT_LENGTH);
 	finished = 0;
 	for (byte i = 0; i < MAX_COMMAND_ID; ++i)
@@ -19,30 +19,40 @@ void CommandTransceiverClass::init()
 		cmd.NumSteps = 0;
 		cmd.Speed_ms = 0;
 	}
+
 }
 
 void CommandTransceiverClass::update()
 {
-	if (Serial.available() && finished == 0) 
+	// Ein neuer Befehl kann nur abgesetzt werden, wenn kein Motor mehr einen Befehl abarbeitet.
+	// Dies ist notwendig, da das Auslesen der seriellen Schnittstelle dauert und die Motoren ansonsten nicht richtig drehen (Timing!)
+	if (Serial1.available() && finished == 0) 
 	{
 		reset();
 
-		// bool ok = Serial.findUntil(input, "\n\n"); funktioniert nicht!
-		byte size = Serial.readBytes(input, INPUT_LENGTH); // TODO read until \n\n -> lesen bis \n\n, dann erst Command bearbeiten
-		input[size] = 0;
-
-		for (int i = 1; i < size; i++) 
+		String buffer;
+		buffer.reserve(INPUT_LENGTH);
+		
+		do 
 		{
-			if (input[i - 1] == input[i] && input[i] == '\n')
+
+			int chunk = Serial1.read();
+			if (chunk >= 0) 
 			{
-				//Serial.println("Problem solved!");
-				input[i] = 0;
-				size = i;
-				break;
+				//Serial1.println(chunk);
+				buffer += (char)chunk;
 			}
+
+		} while (buffer[buffer.length() - 2] != buffer[buffer.length() - 1] || buffer[buffer.length() - 1] != '\n');
+		
+		// TODO Buffer-Length prüfen, ob kleiner INPUT_LENGTH
+		if (buffer.length() > INPUT_LENGTH) 
+		{
+			send(MessageResponse::Syntax, 0xFF);
+			return;
 		}
 
-		//Serial.println(input);
+		memcpy(input, buffer.c_str(), buffer.length());
 
 		char* methodParameters;
 		char* line = strtok_r(input, METHOD_LINE_DELIMITER, &methodParameters);
@@ -53,33 +63,33 @@ void CommandTransceiverClass::update()
 
 		if (strcasecmp(method, "RUN") == 0)
 		{
-			Serial.println(F("101 PARSING"));
 			interpretMethod_Run(methodArgs, methodParameters);
 
 			// Command erfolgreich erhalten und alles ok!
 			hasData = true;
-			error = false;
-			memset(input, 0, INPUT_LENGTH);
-
-			/*for (byte i = 0; i < MAX_COMMAND_ID; i++)
-			{
-				Serial.println(commandList[i].MotorID);
-				Serial.println(commandList[i].Speed_ms);
-				Serial.println(commandList[i].NumSteps);
-				Serial.println(commandList[i].Direction);
-
-				Serial.println();
-			}*/
 		}
-		else if (strcasecmp(method, "SHIT") == 0)
+		else if (strcasecmp(method, "CAL") == 0)
 		{
-			Serial.println(F("102 PARSING"));
+			inCalibration = true;
+			finished = MAX_COMMAND_ID;
+
+			// TODO motoren anpassen an echten Kran: Direction und Speed
+			for (byte i = 0; i < MAX_COMMAND_ID; ++i)
+			{
+				Command& cmd = commandList[i];
+
+				cmd.MotorID = i;
+				cmd.Direction = 'L';
+				cmd.NumSteps = NUM_STEPS_MAX;
+				cmd.Speed_ms = 5;
+			}
+			hasData = true;
+
+			send(MessageResponse::CalOperating, 0xFF);
 		}
 		else
 		{
-			Serial.println(method);
-			Serial.println(F("400 SYNTAX"));
-			return;
+			send(MessageResponse::Syntax, 0xFF);
 		}
 	}
 }
@@ -93,6 +103,9 @@ void CommandTransceiverClass::reset()
 		commandList[i].Direction = 'N';
 		commandList[i].NumSteps = 0;
 	}
+	inCalibration = false;
+	error = false;
+	memset(input, 0, INPUT_LENGTH);
 }
 
 void CommandTransceiverClass::interpretMethod_Run(char * methodArgs, char * methodParameters)
@@ -113,7 +126,7 @@ void CommandTransceiverClass::interpretMethod_Run(char * methodArgs, char * meth
 			{
 				if (commandList[i].MotorID == id)
 				{
-					Serial.println(F("500 SEMANTIC")); // ID doppelt in den Argumenten
+					send(MessageResponse::Semantic, 0xFF);
 					return;
 				}
 			}
@@ -121,7 +134,7 @@ void CommandTransceiverClass::interpretMethod_Run(char * methodArgs, char * meth
 		}
 		else 
 		{
-			Serial.println(F("500 SEMANTIC")); // ID out of range
+			send(MessageResponse::Semantic, 0xFF);
 			return; // Auslesen abbrechen
 		}
 
@@ -156,9 +169,7 @@ void CommandTransceiverClass::interpretMethod_Run(char * methodArgs, char * meth
 		}
 		else 
 		{
-			//Serial.print("Key=");
-			//Serial.println(key);
-			send(MessageResponse::Syntax, 123);
+			send(MessageResponse::Syntax, 0xFF);
 			keyValues = 0;
 		}
 
@@ -215,8 +226,7 @@ bool CommandTransceiverClass::interpretParameter_Direction(char * values, byte n
 		if (i < numberOfCommands)
 		{
 			int direction = value[0];
-			//Serial.print("dir=");
-			//Serial.println(direction);
+
 			if (direction == DIRECTION_LEFT || direction == DIRECTION_RIGHT) 
 			{
 				commandList[i].Direction = direction;
@@ -257,7 +267,7 @@ bool CommandTransceiverClass::interpretParameter_NumberOfSteps(char * values, by
 		if (i < numberOfCommands)
 		{
 			int nsteps = atoi(value); // TODO konvertierung testen
-			if (nsteps > NUM_STEPS_MIN && nsteps < NUM_STEPS_MAX)
+			if (nsteps > NUM_STEPS_MIN && nsteps <= NUM_STEPS_MAX)
 			{
 				commandList[i].NumSteps = nsteps;
 				i++;
@@ -304,23 +314,40 @@ void CommandTransceiverClass::setFinished(byte motorId)
 	finished--;
 	if (finished == 0) 
 	{
-		send(MessageResponse::Done, 0xFF);
+		send(MessageResponse::OK, 0xFF);
 		hasData = false;
 	}
 }
 
 void CommandTransceiverClass::setError(byte motorId)
 {
-	finished = 0;
-	hasData = false;
+	if (inCalibration) // Kalibrierungsfahrt beendet
+	{
+		finished--;
+		if (finished == 0) 
+		{
+			send(MessageResponse::CalOK, 0xFF);
+			inCalibration = false;
+		}
+	}
+	else // Echter Fehler
+	{
+		finished = 0;
+		hasData = false;
 
-	error = true;
-	send(MessageResponse::OutOfBound, motorId);
+		error = true;
+		send(MessageResponse::OutOfBound, motorId);
+	}
 }
 
 bool CommandTransceiverClass::hasError()
 {
 	return error;
+}
+
+bool CommandTransceiverClass::isCalibrating()
+{
+	return inCalibration;
 }
 
 void CommandTransceiverClass::send(MessageResponse type, byte motorId)
@@ -335,7 +362,7 @@ void CommandTransceiverClass::send(MessageResponse type, byte motorId)
 		message += F(" OPERATING \nMotor: ");
 		message += motorId;
 	}
-	else if (type == MessageResponse::Done)
+	else if (type == MessageResponse::OK)
 	{
 		message += F(" OK");
 	}
@@ -352,8 +379,17 @@ void CommandTransceiverClass::send(MessageResponse type, byte motorId)
 		message += F(" OUTOFBOUND ERROR\nMotor: ");
 		message += motorId;
 	}
-
-	Serial.println(message);
+	else if (type == MessageResponse::CalOperating)
+	{
+		message += F(" CALOPERATING");
+	}
+	else if (type == MessageResponse::CalOK)
+	{
+		message += F(" CALOK");
+	}
+	message += "\n\n";
+	Serial1.println(message);
+	Serial1.flush();
 }
 
 CommandTransceiverClass CommandTransceiver;

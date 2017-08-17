@@ -7,7 +7,7 @@
 
 void StepMotorControl::init(byte identifier, unsigned int defaultInterval)
 {
-	this->identifier = identifier;
+	this->motorId = identifier;
 	this->defaultInterval = defaultInterval;
 	interval = defaultInterval;
 
@@ -150,7 +150,7 @@ void StepMotorControl::automatic_idle_update(byte input)
 	}
 
 	// do it!
-	Command* command = CommandTransceiver.getCommand(identifier);
+	Command* command = CommandTransceiver.getCommand(motorId);
 
 	if (command != nullptr) 
 	{
@@ -167,6 +167,7 @@ void StepMotorControl::automatic_idle_update(byte input)
 			lastState = currentState;
 			currentState = StepMotorStates::AUTOMATIC_RIGHT;
 		}
+		CommandTransceiver.send(MessageResponse::Operating, this->motorId);
 	}
 
 	if (!CommandTransceiver.isAvailable())
@@ -192,14 +193,14 @@ void StepMotorControl::automatic_left_update(byte input)
 	// EXIT ACTIONS
 	if (currentSteps <= 0) // finished
 	{
-		CommandTransceiver.setFinished(this->identifier);
+		CommandTransceiver.setFinished(this->motorId);
 
 		lastState = currentState;
 		currentState = StepMotorStates::AUTOMATIC_IDLE;
 	}
 	else if ((input & B00100000) == B00100000) // outofbound
 	{
-		CommandTransceiver.setError(this->identifier);
+		CommandTransceiver.setError(this->motorId);
 
 		lastState = currentState;
 		currentState = StepMotorStates::AUTOMATIC_IDLE;
@@ -226,14 +227,14 @@ void StepMotorControl::automatic_right_update(byte input)
 	// EXIT ACTIONS
 	if (currentSteps <= 0) // finished
 	{
-		CommandTransceiver.setFinished(this->identifier);
+		CommandTransceiver.setFinished(this->motorId);
 
 		lastState = currentState;
 		currentState = StepMotorStates::AUTOMATIC_IDLE;
 	}
 	else if ((input & B00010000) == B00010000) // outofbound
 	{
-		CommandTransceiver.setError(this->identifier);
+		CommandTransceiver.setError(this->motorId);
 
 		lastState = currentState;
 		currentState = StepMotorStates::AUTOMATIC_IDLE;

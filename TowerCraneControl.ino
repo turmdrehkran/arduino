@@ -61,9 +61,12 @@ void updateTrolley()
 
 void updateRotator()
 {
-	// TODO Lichtschranke soll nur bei einer Kalibrierung auf diesen Motor angewendet werden, ansonsten LB-Bit auf Null
+	// Lichtschranke soll nur bei einer Kalibrierung auf diesen Motor angewendet werden, ansonsten LB-Bit auf Null
 	rotatorInput.update();
 	byte input = rotatorInput.getInput();
-	input &= ~(1 << 5);
+	if (!CommandTransceiver.isCalibrating()) 
+	{
+		input &= ~(1 << 5);
+	}
 	rotatorMotor.update(input);
 }

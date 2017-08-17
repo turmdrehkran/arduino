@@ -24,7 +24,7 @@ class StepMotorControl
 	};
 
 private:
-	byte identifier;
+	byte motorId;
 
 	byte notEnabledPin;
 	byte stepPin;
@@ -41,6 +41,7 @@ private:
 
 	void step();
 
+	// Vom State abhängige Methoden
 	void idle_update(byte input);
 	void left_update(byte input);
 	void right_update(byte input);

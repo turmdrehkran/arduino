@@ -9,6 +9,8 @@
 	#include "WProgram.h"
 #endif
 
+#include <avr/pgmspace.h>
+
 #define INPUT_LENGTH 256
 #define MAX_COMMAND_ID 3
 #define METHOD_LINE_DELIMITER "\n"
@@ -60,6 +62,8 @@ private:
 	bool interpretParameter_HoldingTorgue(char* values, byte numberOfCommands);
 	bool interpretParameter_NumberOfSteps(char* values, byte numberOfCommands);
 
+	void send(String& message);
+
  public:
 	void init();
 	void update();
@@ -70,7 +74,9 @@ private:
 	bool hasError();
 	bool isCalibrating();
 
+	void send(MessageResponse type);
 	void send(MessageResponse type, byte motorId);
+	void send(MessageResponse type, const __FlashStringHelper *text);
 };
 
 extern CommandTransceiverClass CommandTransceiver;

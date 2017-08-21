@@ -35,7 +35,6 @@ void CommandTransceiverClass::update()
 		
 		do 
 		{
-
 			int chunk = Serial1.read();
 			if (chunk >= 0) 
 			{
@@ -48,7 +47,7 @@ void CommandTransceiverClass::update()
 		// TODO Buffer-Length prüfen, ob kleiner INPUT_LENGTH
 		if (buffer.length() > INPUT_LENGTH) 
 		{
-			send(MessageResponse::Syntax, 0xFF);
+			send(MessageResponse::Syntax, F("Received Message too long."));
 			return;
 		}
 
@@ -85,11 +84,11 @@ void CommandTransceiverClass::update()
 			}
 			hasData = true;
 
-			send(MessageResponse::CalOperating, 0xFF);
+			send(MessageResponse::CalOperating);
 		}
 		else
 		{
-			send(MessageResponse::Syntax, 0xFF);
+			send(MessageResponse::Syntax, F("Unknown Method"));
 		}
 	}
 }
@@ -126,7 +125,7 @@ void CommandTransceiverClass::interpretMethod_Run(char * methodArgs, char * meth
 			{
 				if (commandList[i].MotorID == id)
 				{
-					send(MessageResponse::Semantic, 0xFF);
+					send(MessageResponse::Semantic, F("Multiple settings of a single motor"));
 					return;
 				}
 			}
@@ -134,7 +133,7 @@ void CommandTransceiverClass::interpretMethod_Run(char * methodArgs, char * meth
 		}
 		else 
 		{
-			send(MessageResponse::Semantic, 0xFF);
+			send(MessageResponse::Semantic, F("Motor does not exist"));
 			return; // Auslesen abbrechen
 		}
 
@@ -169,7 +168,7 @@ void CommandTransceiverClass::interpretMethod_Run(char * methodArgs, char * meth
 		}
 		else 
 		{
-			send(MessageResponse::Syntax, 0xFF);
+			send(MessageResponse::Syntax, F("Unknown parameter found"));
 			keyValues = 0;
 		}
 
@@ -199,14 +198,14 @@ bool CommandTransceiverClass::interpretParameter_Speed(char * values, byte numbe
 			}
 			else
 			{
-				send(MessageResponse::Syntax, commandList[i].MotorID);
+				send(MessageResponse::Syntax, F("Out of Range Speed"));
 				value = 0;
 				return false;
 			}
 		}
 		else
 		{
-			send(MessageResponse::Semantic, 0xFF);
+			send(MessageResponse::Semantic, F("Motor does not exist"));
 			value = 0;
 			return false;
 		}
@@ -235,14 +234,14 @@ bool CommandTransceiverClass::interpretParameter_Direction(char * values, byte n
 			}
 			else
 			{
-				send(MessageResponse::Syntax, commandList[i].MotorID);
+				send(MessageResponse::Syntax, F("Unknown Direction"));
 				value = 0;
 				return false;
 			}
 		}
 		else
 		{
-			send(MessageResponse::Semantic, 0xFF);
+			send(MessageResponse::Semantic, F("Motor does not exist"));
 			value = 0;
 			return false;
 		}
@@ -275,19 +274,26 @@ bool CommandTransceiverClass::interpretParameter_NumberOfSteps(char * values, by
 			}
 			else
 			{
-				send(MessageResponse::Syntax, commandList[i].MotorID);
+				send(MessageResponse::Syntax, F("Out of Range NumSteps"));
 				value = 0;
 				return false;
 			}
 		}
 		else
 		{
-			send(MessageResponse::Semantic, 0xFF);
+			send(MessageResponse::Semantic, F("Motor does not exist"));
 			value = 0;
 			return false;
 		}
 	}
 	return true;
+}
+
+void CommandTransceiverClass::send(String & message)
+{
+	message += F("\n\n");
+	Serial1.println(message);
+	Serial1.flush();
 }
 
 bool CommandTransceiverClass::isAvailable()
@@ -314,7 +320,7 @@ void CommandTransceiverClass::setFinished(byte motorId)
 	finished--;
 	if (finished == 0) 
 	{
-		send(MessageResponse::OK, 0xFF);
+		send(MessageResponse::OK);
 		hasData = false;
 	}
 }
@@ -326,7 +332,7 @@ void CommandTransceiverClass::setError(byte motorId)
 		finished--;
 		if (finished == 0) 
 		{
-			send(MessageResponse::CalOK, 0xFF);
+			send(MessageResponse::CalOK);
 			inCalibration = false;
 		}
 	}
@@ -350,6 +356,29 @@ bool CommandTransceiverClass::isCalibrating()
 	return inCalibration;
 }
 
+void CommandTransceiverClass::send(MessageResponse type)
+{
+	String message;
+	message.reserve(32);
+
+	message += type;
+
+	if (type == MessageResponse::OK)
+	{
+		message += F(" OK");
+	}
+	else if (type == MessageResponse::CalOperating)
+	{
+		message += F(" CALOPERATING");
+	}
+	else if (type == MessageResponse::CalOK)
+	{
+		message += F(" CALOK");
+	}
+
+	send(message);
+}
+
 void CommandTransceiverClass::send(MessageResponse type, byte motorId)
 {
 	String message;
@@ -362,11 +391,23 @@ void CommandTransceiverClass::send(MessageResponse type, byte motorId)
 		message += F(" OPERATING \nMotor: ");
 		message += motorId;
 	}
-	else if (type == MessageResponse::OK)
+	else if (type == MessageResponse::OutOfBound)
 	{
-		message += F(" OK");
+		message += F(" OUTOFBOUND ERROR\nMotor: ");
+		message += motorId;
 	}
-	else if (type == MessageResponse::Semantic)
+	
+	send(message);
+}
+
+void CommandTransceiverClass::send(MessageResponse type, const __FlashStringHelper *textLiteral)
+{
+	String message;
+	message.reserve(32);
+
+	message += type;
+
+	if (type == MessageResponse::Semantic)
 	{
 		message += F(" SEMANTIC");
 	}
@@ -374,22 +415,15 @@ void CommandTransceiverClass::send(MessageResponse type, byte motorId)
 	{
 		message += F(" SYNTAX");
 	}
-	else if (type == MessageResponse::OutOfBound)
+
+	String text(textLiteral);
+	if (text.length() > 0)
 	{
-		message += F(" OUTOFBOUND ERROR\nMotor: ");
-		message += motorId;
+		message += F("\n");
+		message += text;
 	}
-	else if (type == MessageResponse::CalOperating)
-	{
-		message += F(" CALOPERATING");
-	}
-	else if (type == MessageResponse::CalOK)
-	{
-		message += F(" CALOK");
-	}
-	message += "\n\n";
-	Serial1.println(message);
-	Serial1.flush();
+
+	send(message);
 }
 
 CommandTransceiverClass CommandTransceiver;

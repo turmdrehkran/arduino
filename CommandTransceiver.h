@@ -42,7 +42,6 @@ enum MessageResponse
 	Syntax = 400,
 	Semantic = 410,
 	OutOfBound = 550
-	// and many more...
 };
 
 class CommandTransceiverClass

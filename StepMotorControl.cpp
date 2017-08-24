@@ -13,10 +13,10 @@ void StepMotorControl::init(byte identifier, unsigned int defaultInterval)
 
 	lastExecutionTime = 0UL;
 	currentSteps = 0;
-	currentState = StepMotorStates::IDLE; // TODO Überlegen wegen einem State CALIB
+	currentState = StepMotorStates::IDLE; 
 }
 
-void StepMotorControl::update(byte input) // TODO in Update-Methode die Eingabe übergeben
+void StepMotorControl::update(byte input) 
 {
 	if ((lastExecutionTime + interval) < millis())
 	{
@@ -64,8 +64,6 @@ void StepMotorControl::step()
 {
 	digitalWrite(stepPin, HIGH);
 	digitalWrite(stepPin, LOW);
-
-	// TODO count steps: left -1 and right +1
 }
 
 void StepMotorControl::idle_update(byte input)
@@ -131,7 +129,6 @@ void StepMotorControl::right_update(byte input)
 
 	step();
 
-	// left, right, lbLeft, lbRight, Serial
 	if ((input & B01000000) != B01000000 || (input & B00010000) == B00010000) // x0xxx || xxx1x
 	{
 		// exit action
@@ -145,8 +142,6 @@ void StepMotorControl::automatic_idle_update(byte input)
 	if (lastState != currentState)
 	{
 		// entry Action
-		// TODO set interval
-		// TODO Wo werden die Anzahl an Steps gespeichert, welche gefahren werden müssen
 	}
 
 	// do it!

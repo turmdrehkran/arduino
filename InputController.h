@@ -28,7 +28,6 @@ private:
 
 	void update_Buttons();
 	void update_LightBarriers();
-	void update_SerialInterface();
 
 public:
 	void init();

@@ -19,7 +19,6 @@ void CommandTransceiverClass::init()
 		cmd.NumSteps = 0;
 		cmd.Speed_ms = 0;
 	}
-
 }
 
 void CommandTransceiverClass::update()
@@ -44,7 +43,6 @@ void CommandTransceiverClass::update()
 
 		} while (buffer[buffer.length() - 2] != buffer[buffer.length() - 1] || buffer[buffer.length() - 1] != '\n');
 		
-		// TODO Buffer-Length prüfen, ob kleiner INPUT_LENGTH
 		if (buffer.length() > INPUT_LENGTH) 
 		{
 			send(MessageResponse::Syntax, F("Received Message too long."));
@@ -292,7 +290,7 @@ bool CommandTransceiverClass::interpretParameter_NumberOfSteps(char * values, by
 void CommandTransceiverClass::send(String & message)
 {
 	message += F("\n\n");
-	Serial1.println(message);
+	Serial1.print(message);
 	Serial1.flush();
 }
 
@@ -419,7 +417,7 @@ void CommandTransceiverClass::send(MessageResponse type, const __FlashStringHelp
 	String text(textLiteral);
 	if (text.length() > 0)
 	{
-		message += F("\n");
+		message += F("\nMessage: ");
 		message += text;
 	}
 
